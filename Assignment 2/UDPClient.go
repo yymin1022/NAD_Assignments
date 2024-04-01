@@ -21,6 +21,8 @@ func main() {
 		return
 	}
 
+	printMenu()
+
 	fmt.Printf("Input lowercase sentence: ")
 	input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
 
@@ -55,4 +57,12 @@ func closeConnection(conn net.PacketConn) {
 			fmt.Printf("Error: %s", err.Error())
 		}
 	}
+}
+
+func printMenu() {
+	fmt.Println("1) Convert Text to UPPER-case Letters")
+	fmt.Println("2) Get Server Uptime")
+	fmt.Println("3) Get Client IP / Port")
+	fmt.Println("4) Get Count of Requests Server Got")
+	fmt.Println("5) Exit Client")
 }
