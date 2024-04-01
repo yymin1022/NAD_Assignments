@@ -19,6 +19,7 @@ func main() {
 	conn := makeConnection()
 
 	if conn == nil {
+		fmt.Println("Error: Failed to Connect")
 		return
 	}
 
@@ -44,7 +45,7 @@ func makeConnection() net.PacketConn {
 	conn, err := net.ListenPacket("udp", ":")
 
 	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
+		fmt.Printf("Error: %s\n", err.Error())
 		return nil
 	}
 
@@ -58,7 +59,7 @@ func closeConnection(conn net.PacketConn) {
 	if conn != nil {
 		err := conn.Close()
 		if err != nil {
-			fmt.Printf("Error: %s", err.Error())
+			fmt.Printf("Error: %s\n", err.Error())
 		}
 	}
 }
@@ -76,12 +77,12 @@ func readCommand() int {
 
 	_, err := fmt.Scanln(&input)
 	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
+		fmt.Printf("Error: %s\n", err.Error())
 	}
 
 	cmd, err := strconv.ParseInt(input, 10, 0)
 	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
+		fmt.Printf("Error: %s\n", err.Error())
 		return 0
 	}
 
