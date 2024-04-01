@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 )
 
 const SERVER_NAME = "nsl2.cau.ac.kr"
@@ -22,6 +23,9 @@ func main() {
 	}
 
 	printMenu()
+	cmd := readCommand()
+
+	fmt.Printf("%d\n", cmd)
 
 	fmt.Printf("Input lowercase sentence: ")
 	input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -65,4 +69,26 @@ func printMenu() {
 	fmt.Println("3) Get Client IP / Port")
 	fmt.Println("4) Get Count of Requests Server Got")
 	fmt.Println("5) Exit Client")
+}
+
+func readCommand() int {
+	var input string
+
+	_, err := fmt.Scanln(&input)
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+	}
+
+	cmd, err := strconv.ParseInt(input, 10, 0)
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+		return 0
+	}
+
+	if cmd < 1 || cmd > 5 {
+		fmt.Println("Error: Invalid Command")
+		return 0
+	}
+
+	return int(cmd)
 }
