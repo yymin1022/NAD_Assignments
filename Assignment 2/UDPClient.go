@@ -65,6 +65,7 @@ func closeConnection(conn net.PacketConn) {
 }
 
 func printMenu() {
+	fmt.Println("< Select Menu. >")
 	fmt.Println("1) Convert Text to UPPER-case Letters")
 	fmt.Println("2) Get Server Uptime")
 	fmt.Println("3) Get Client IP / Port")
