@@ -41,10 +41,18 @@ func main() {
 		}
 
 		server_addr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
-		conn.WriteTo([]byte(string(rune(cmd))+text), server_addr)
+		_, err := conn.WriteTo([]byte(string(rune(cmd))+text), server_addr)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err.Error())
+			continue
+		}
 
 		buffer := make([]byte, 1024)
-		conn.ReadFrom(buffer)
+		_, _, err = conn.ReadFrom(buffer)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err.Error())
+			continue
+		}
 		fmt.Printf("Reply from server: %s\n", string(buffer))
 	}
 
