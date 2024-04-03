@@ -14,9 +14,9 @@ const SERVER_NAME = "localhost"
 const SERVER_PORT = "14094"
 
 func main() {
-	conn := makeConnection()
+	serverConnection := makeConnection()
 
-	if conn == nil {
+	if serverConnection == nil {
 		fmt.Println("Error: Failed to Connect")
 		return
 	}
@@ -40,23 +40,23 @@ func main() {
 			}
 		}
 
-		server_addr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
-		_, err := conn.WriteTo([]byte(string(rune(cmd))+text), server_addr)
+		serverAddr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
+		_, err := serverConnection.WriteTo([]byte(string(rune(cmd))+text), serverAddr)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			continue
 		}
 
-		buffer := make([]byte, 1024)
-		_, _, err = conn.ReadFrom(buffer)
+		responseBuffer := make([]byte, 1024)
+		_, _, err = serverConnection.ReadFrom(responseBuffer)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			continue
 		}
-		fmt.Printf("Reply from server: %s\n", string(buffer))
+		fmt.Printf("Reply from server: %s\n", string(responseBuffer))
 	}
 
-	closeConnection(conn)
+	closeConnection(serverConnection)
 }
 
 func makeConnection() net.PacketConn {
