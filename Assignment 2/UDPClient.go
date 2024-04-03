@@ -7,7 +7,10 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 )
 
 const SERVER_NAME = "localhost"
@@ -15,6 +18,14 @@ const SERVER_PORT = "14094"
 
 func main() {
 	serverConnection := makeConnection()
+
+	sigintHandler := make(chan os.Signal, 1)
+	signal.Notify(sigintHandler, syscall.SIGINT)
+	go func() {
+		<-sigintHandler
+		closeConnection(serverConnection)
+		os.Exit(0)
+	}()
 
 	if serverConnection == nil {
 		fmt.Println("Error: Failed to Connect")
