@@ -5,10 +5,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 )
 
@@ -23,20 +21,32 @@ func main() {
 		return
 	}
 
-	printMenu()
-	cmd := readCommand()
+	for {
+		printMenu()
+		cmd := readCommand()
 
-	fmt.Printf("%d\n", cmd)
+		text := ""
+		if cmd == 0 {
+			continue
+		} else if cmd == 5 {
+			break
+		} else if cmd == 1 {
+			fmt.Printf("Input lowercase sentence: ")
+			_, err := fmt.Scanf("%s", &text)
 
-	fmt.Printf("Input lowercase sentence: ")
-	input, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+			if err != nil {
+				fmt.Printf("Error: %s\n", err.Error())
+				continue
+			}
+		}
 
-	server_addr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
-	conn.WriteTo([]byte(input), server_addr)
+		server_addr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
+		conn.WriteTo([]byte(string(rune(cmd))+text), server_addr)
 
-	buffer := make([]byte, 1024)
-	conn.ReadFrom(buffer)
-	fmt.Printf("Reply from server: %s", string(buffer))
+		buffer := make([]byte, 1024)
+		conn.ReadFrom(buffer)
+		fmt.Printf("Reply from server: %s\n", string(buffer))
+	}
 
 	closeConnection(conn)
 }
@@ -65,6 +75,7 @@ func closeConnection(conn net.PacketConn) {
 }
 
 func printMenu() {
+	fmt.Println()
 	fmt.Println("< Select Menu. >")
 	fmt.Println("1) Convert Text to UPPER-case Letters")
 	fmt.Println("2) Get Server Uptime")
@@ -83,7 +94,7 @@ func readCommand() int {
 
 	cmd, err := strconv.ParseInt(input, 10, 0)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		fmt.Println("Error: Invalid Command")
 		return 0
 	}
 
