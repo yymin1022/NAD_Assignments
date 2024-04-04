@@ -25,7 +25,7 @@ func main() {
 		count, requestAddr, _ := serverConnection.ReadFrom(requestBuffer)
 		fmt.Printf("UDP Connection Request from %s\n", requestAddr.String())
 
-		responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]))
+		responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), requestAddr.String())
 		_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
 		if err != nil {
 			fmt.Println("Error: Failed to Send Response")
@@ -46,7 +46,17 @@ func initServer() net.PacketConn {
 	return serverConnection
 }
 
-func getResponse(cmd int, data string) string {
-	fmt.Printf("cmd is %d, data is %s\n", cmd, data)
-	return strings.ToUpper(data)
+func getResponse(cmd int, data string, addr string) string {
+	switch cmd {
+	case 1:
+		return strings.ToUpper(data)
+	case 2:
+
+	case 3:
+		addrInfo := strings.Split(addr, ":")
+		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
+	case 4:
+
+	}
+	return ""
 }
