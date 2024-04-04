@@ -10,11 +10,11 @@ import (
 	"net"
 )
 
-func main() {
-	serverPort := "14094"
+const SERVER_PORT = "14094"
 
-	conn, _ := net.ListenPacket("udp", ":"+serverPort)
-	fmt.Printf("Server is ready to receive on port %s\n", serverPort)
+func main() {
+	conn, _ := net.ListenPacket("udp", ":"+SERVER_PORT)
+	fmt.Printf("Server is ready to receive on port %s\n", SERVER_PORT)
 
 	buffer := make([]byte, 1024)
 
