@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 )
 
 const SERVER_NAME = "localhost"
@@ -51,6 +52,8 @@ func main() {
 			}
 		}
 
+		timeRequest := time.Now().UnixMicro()
+
 		serverAddr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
 		_, err := serverConnection.WriteTo([]byte(string(rune(cmd))+text), serverAddr)
 		if err != nil {
@@ -58,13 +61,16 @@ func main() {
 			continue
 		}
 
+		timeResponse := time.Now().UnixMicro()
+
 		responseBuffer := make([]byte, 1024)
 		_, _, err = serverConnection.ReadFrom(responseBuffer)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
 			continue
 		}
-		fmt.Printf("Reply from server: %s\n", string(responseBuffer))
+		fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
+		fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
 	}
 
 	closeConnection(serverConnection)
@@ -107,6 +113,7 @@ func printMenu() {
 func readCommand() int {
 	var input string
 
+	fmt.Print("Input Command: ")
 	_, err := fmt.Scanln(&input)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err.Error())
