@@ -5,22 +5,48 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"net"
+	"strings"
 )
 
-const SERVER_PORT = "14094"
+const UDP_SERVER_PORT = "14094"
 
 func main() {
-	conn, _ := net.ListenPacket("udp", ":"+SERVER_PORT)
-	fmt.Printf("Server is ready to receive on port %s\n", SERVER_PORT)
+	serverConnection := initServer()
+	if serverConnection == nil {
+		fmt.Println("Error: Failed to Init Server")
+		return
+	}
 
-	buffer := make([]byte, 1024)
+	requestBuffer := make([]byte, 1024)
 
 	for {
-		count, r_addr, _ := conn.ReadFrom(buffer)
-		fmt.Printf("UDP message from %s\n", r_addr.String())
-		conn.WriteTo(bytes.ToUpper(buffer[:count]), r_addr)
+		count, requestAddr, _ := serverConnection.ReadFrom(requestBuffer)
+		fmt.Printf("UDP Connection Request from %s\n", requestAddr.String())
+
+		responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]))
+		_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
+		if err != nil {
+			fmt.Println("Error: Failed to Send Response")
+			continue
+		}
 	}
+}
+
+func initServer() net.PacketConn {
+	serverConnection, err := net.ListenPacket("udp", ":"+UDP_SERVER_PORT)
+	if err != nil {
+		fmt.Printf("Error: %s\n", err.Error())
+		return nil
+	}
+
+	fmt.Printf("Server is ready to receive on port %s\n", UDP_SERVER_PORT)
+
+	return serverConnection
+}
+
+func getResponse(cmd int, data string) string {
+	fmt.Printf("cmd is %d, data is %s\n", cmd, data)
+	return strings.ToUpper(data)
 }
