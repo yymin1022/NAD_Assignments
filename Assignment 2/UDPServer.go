@@ -13,6 +13,7 @@ import (
 
 const UDP_SERVER_PORT = "14094"
 
+var serverResponseCnt int
 var serverStartTime time.Time
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 		return
 	}
 
+	serverResponseCnt = 0
 	serverStartTime = time.Now()
 
 	requestBuffer := make([]byte, 1024)
@@ -36,6 +38,7 @@ func main() {
 			fmt.Println("Error: Failed to Send Response")
 			continue
 		}
+		serverResponseCnt++
 	}
 }
 
@@ -62,7 +65,7 @@ func getResponse(cmd int, data string, addr string) string {
 		addrInfo := strings.Split(addr, ":")
 		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
 	case 4:
-
+		return fmt.Sprintf("requests served = %d", serverResponseCnt)
 	}
 	return ""
 }
