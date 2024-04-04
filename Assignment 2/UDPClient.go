@@ -85,6 +85,7 @@ func makeConnection() net.PacketConn {
 }
 
 func closeConnection(conn net.PacketConn) {
+	fmt.Println("\rClosing Client Program...\nBye bye~")
 	if conn != nil {
 		err := conn.Close()
 		if err != nil {
