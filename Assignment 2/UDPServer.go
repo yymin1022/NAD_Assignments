@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 const UDP_SERVER_PORT = "14094"
+
+var serverStartTime time.Time
 
 func main() {
 	serverConnection := initServer()
@@ -18,6 +21,8 @@ func main() {
 		fmt.Println("Error: Failed to Init Server")
 		return
 	}
+
+	serverStartTime = time.Now()
 
 	requestBuffer := make([]byte, 1024)
 
@@ -51,7 +56,8 @@ func getResponse(cmd int, data string, addr string) string {
 	case 1:
 		return strings.ToUpper(data)
 	case 2:
-
+		curTime := time.Since(serverStartTime)
+		return fmt.Sprintf("run time = %02.0f:%02.0f:%02.0f", curTime.Hours(), curTime.Minutes(), curTime.Seconds())
 	case 3:
 		addrInfo := strings.Split(addr, ":")
 		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
