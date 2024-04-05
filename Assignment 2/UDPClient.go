@@ -61,14 +61,23 @@ func main() {
 			continue
 		}
 
-		timeResponse := time.Now().UnixMicro()
-
 		responseBuffer := make([]byte, 1024)
+		serverTimer := time.NewTimer(time.Second * 5)
+		go func() {
+			<-serverTimer.C
+			fmt.Println("Error: Server Timeout.")
+			closeConnection(serverConnection)
+			os.Exit(0)
+		}()
 		_, _, err = serverConnection.ReadFrom(responseBuffer)
 		if err != nil {
 			fmt.Printf("Error: %s\n", err.Error())
+			serverTimer.Stop()
 			continue
 		}
+		serverTimer.Stop()
+		timeResponse := time.Now().UnixMicro()
+
 		fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
 		fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
 	}
