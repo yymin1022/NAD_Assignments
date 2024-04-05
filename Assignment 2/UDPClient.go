@@ -29,7 +29,7 @@ func main() {
 	}()
 
 	if serverConnection == nil {
-		fmt.Println("Error: Failed to Connect")
+		printError("Failed to connect server.")
 		return
 	}
 
@@ -47,7 +47,7 @@ func main() {
 			_, err := fmt.Scanf("%s", &text)
 
 			if err != nil {
-				fmt.Printf("Error: %s\n", err.Error())
+				printError(err.Error())
 				continue
 			}
 		}
@@ -57,7 +57,7 @@ func main() {
 		serverAddr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
 		_, err := serverConnection.WriteTo([]byte(string(rune(cmd))+text), serverAddr)
 		if err != nil {
-			fmt.Printf("Error: %s\n", err.Error())
+			printError(err.Error())
 			continue
 		}
 
@@ -65,13 +65,13 @@ func main() {
 		serverTimer := time.NewTimer(time.Second * 5)
 		go func() {
 			<-serverTimer.C
-			fmt.Println("Error: Server Timeout.")
+			printError("Server Timeout.")
 			closeConnection(serverConnection)
 			os.Exit(0)
 		}()
 		_, _, err = serverConnection.ReadFrom(responseBuffer)
 		if err != nil {
-			fmt.Printf("Error: %s\n", err.Error())
+			printError(err.Error())
 			serverTimer.Stop()
 			continue
 		}
@@ -89,7 +89,7 @@ func makeConnection() net.PacketConn {
 	conn, err := net.ListenPacket("udp", ":")
 
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		printError(err.Error())
 		return nil
 	}
 
@@ -104,7 +104,7 @@ func closeConnection(conn net.PacketConn) {
 	if conn != nil {
 		err := conn.Close()
 		if err != nil {
-			fmt.Printf("Error: %s\n", err.Error())
+			printError(err.Error())
 		}
 	}
 }
@@ -125,19 +125,27 @@ func readCommand() int {
 	fmt.Print("Input Command: ")
 	_, err := fmt.Scanln(&input)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		printError(err.Error())
 	}
 
 	cmd, err := strconv.ParseInt(input, 10, 0)
 	if err != nil {
-		fmt.Println("Error: Invalid Command")
+		printError("Invalid Command.")
 		return 0
 	}
 
 	if cmd < 1 || cmd > 5 {
-		fmt.Println("Error: Invalid Command")
+		printError("Invalid Command.")
 		return 0
 	}
 
 	return int(cmd)
+}
+
+func printError(msg string) {
+	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+	if err != nil {
+		fmt.Printf("Error: %s\n", msg)
+		return
+	}
 }
