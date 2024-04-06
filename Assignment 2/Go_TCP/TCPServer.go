@@ -39,8 +39,8 @@ func main() {
 
 	requestBuffer := make([]byte, 1024)
 
+	serverConnection, _ := serverListener.Accept()
 	for {
-		serverConnection, _ := serverListener.Accept()
 		fmt.Printf("TCP Connection Request from %s\n", serverConnection.RemoteAddr().String())
 
 		count, _ := serverConnection.Read(requestBuffer)
