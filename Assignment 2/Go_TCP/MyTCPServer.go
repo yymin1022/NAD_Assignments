@@ -41,22 +41,25 @@ func main() {
 
 	for {
 		serverConnection, _ := serverListener.Accept()
-		for {
-			fmt.Printf("TCP Connection Request from %s\n", serverConnection.RemoteAddr().String())
+		for serverConnection != nil {
+			requestAddr := serverConnection.RemoteAddr()
+			if requestAddr != nil {
+				fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
 
-			count, _ := serverConnection.Read(requestBuffer)
-			responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), serverConnection.RemoteAddr().String())
+				count, _ := serverConnection.Read(requestBuffer)
+				responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), requestAddr.String())
 
-			if responseData == "" {
-				_ = serverConnection.Close()
-				break
+				if responseData == "" {
+					_ = serverConnection.Close()
+					break
+				}
+				_, err := serverConnection.Write([]byte(responseData))
+				if err != nil {
+					fmt.Println("Error: Failed to Send Response")
+					continue
+				}
+				serverResponseCnt++
 			}
-			_, err := serverConnection.Write([]byte(responseData))
-			if err != nil {
-				fmt.Println("Error: Failed to Send Response")
-				continue
-			}
-			serverResponseCnt++
 		}
 	}
 }
