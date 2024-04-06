@@ -34,7 +34,8 @@ func main() {
 		os.Exit(0)
 	}()
 
-	for {
+	exitFlag := false
+	for !exitFlag {
 		printMenu()
 		cmd := readCommand()
 
@@ -72,24 +73,31 @@ func main() {
 		serverTimer := time.NewTimer(time.Second * 5)
 		go func() {
 			<-serverTimer.C
+			exitFlag = true
 			printError("Server Timeout.")
 			closeConnection(serverConnection)
 			os.Exit(0)
 		}()
-		_, _, err = serverConnection.ReadFrom(responseBuffer)
-		if err != nil {
-			printError(err.Error())
-			serverTimer.Stop()
-			continue
-		}
-		serverTimer.Stop()
-		timeResponse := time.Now().UnixMicro()
 
-		fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
-		fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
+		_, _, err = serverConnection.ReadFrom(responseBuffer)
+
+		if !exitFlag {
+			if err != nil {
+				printError(err.Error())
+				serverTimer.Stop()
+				continue
+			}
+			serverTimer.Stop()
+			timeResponse := time.Now().UnixMicro()
+
+			fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
+			fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
+		}
 	}
 
-	closeConnection(serverConnection)
+	if !exitFlag {
+		closeConnection(serverConnection)
+	}
 }
 
 func makeConnection() net.PacketConn {
