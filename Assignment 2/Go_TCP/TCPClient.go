@@ -43,6 +43,11 @@ func main() {
 		if cmd == 0 {
 			continue
 		} else if cmd == 5 {
+			_, err := serverConnection.Write([]byte(string(rune(cmd))))
+			if err != nil {
+				printError(err.Error())
+				continue
+			}
 			break
 		} else if cmd == 1 {
 			fmt.Printf("Input lowercase sentence: ")
