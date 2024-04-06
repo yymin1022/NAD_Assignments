@@ -2,3 +2,9 @@ MyTCPClient
 MyTCPServer
 MyUDPClient
 MyUDPServer
+
+EasyTCPClient
+EasyTCPServer
+EasyUDPClient
+EasyUDPServer
+*.class
