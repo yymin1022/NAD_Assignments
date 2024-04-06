@@ -46,7 +46,6 @@ func main() {
 			_, err := serverConnection.Write([]byte(string(rune(cmd))))
 			if err != nil {
 				printError(err.Error())
-				continue
 			}
 			break
 		} else if cmd == 1 {
