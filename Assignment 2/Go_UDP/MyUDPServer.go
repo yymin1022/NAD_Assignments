@@ -41,15 +41,17 @@ func main() {
 
 	for {
 		count, requestAddr, _ := serverConnection.ReadFrom(requestBuffer)
-		fmt.Printf("UDP Connection Request from %s\n", requestAddr.String())
+		if requestAddr != nil {
+			fmt.Printf("UDP Connection Request from %s\n", requestAddr.String())
 
-		responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), requestAddr.String())
-		_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
-		if err != nil {
-			fmt.Println("Error: Failed to Send Response")
-			continue
+			responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), requestAddr.String())
+			_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
+			if err != nil {
+				fmt.Println("Error: Failed to Send Response")
+				continue
+			}
+			serverResponseCnt++
 		}
-		serverResponseCnt++
 	}
 }
 
