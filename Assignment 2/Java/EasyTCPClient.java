@@ -1,5 +1,4 @@
 import java.io.*;
-import java.net.ConnectException;
 import java.net.Socket;
 
 public class EasyTCPClient {
@@ -15,7 +14,6 @@ public class EasyTCPClient {
         writer.flush();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
-        String line = reader.readLine();
 
         writer.close();
         reader.close();
