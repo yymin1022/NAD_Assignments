@@ -21,6 +21,11 @@ const SERVER_PORT = "14094"
 func main() {
 	serverConnection := makeConnection()
 
+	if serverConnection == nil {
+		printError("Failed to connect server.")
+		return
+	}
+
 	sigintHandler := make(chan os.Signal, 1)
 	signal.Notify(sigintHandler, syscall.SIGINT)
 	go func() {
@@ -28,11 +33,6 @@ func main() {
 		closeConnection(serverConnection)
 		os.Exit(0)
 	}()
-
-	if serverConnection == nil {
-		printError("Failed to connect server.")
-		return
-	}
 
 	for {
 		printMenu()
