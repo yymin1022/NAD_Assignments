@@ -7,7 +7,10 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -22,6 +25,14 @@ func main() {
 		fmt.Println("Error: Failed to Init Server")
 		return
 	}
+
+	sigintHandler := make(chan os.Signal, 1)
+	signal.Notify(sigintHandler, syscall.SIGINT)
+	go func() {
+		<-sigintHandler
+		closeServer(serverConnection)
+		os.Exit(0)
+	}()
 
 	serverResponseCnt = 0
 	serverStartTime = time.Now()
@@ -52,6 +63,13 @@ func initServer() net.PacketConn {
 	fmt.Printf("Server is ready to receive on port %s\n", UDP_SERVER_PORT)
 
 	return serverConnection
+}
+
+func closeServer(conn net.PacketConn) {
+	fmt.Println("\rClosing Server Program...\nBye bye~")
+	if conn != nil {
+		_ = conn.Close()
+	}
 }
 
 func getResponse(cmd int, data string, addr string) string {
