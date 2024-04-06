@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -44,10 +45,16 @@ func main() {
 			break
 		} else if cmd == 1 {
 			fmt.Printf("Input lowercase sentence: ")
-			_, err := fmt.Scanf("%s", &text)
+			var err error
+			text, err = bufio.NewReader(os.Stdin).ReadString('\n')
 
 			if err != nil {
 				printError(err.Error())
+				continue
+			}
+
+			if len(text) >= 1024 {
+				printError("Text too long.")
 				continue
 			}
 		}
