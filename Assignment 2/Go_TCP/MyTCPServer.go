@@ -23,7 +23,7 @@ var serverStartTime time.Time
 func main() {
 	serverListener := initServer()
 	if serverListener == nil {
-		fmt.Println("Error: Failed to Init Server")
+		printError("Failed to Init Server")
 		return
 	}
 
@@ -59,7 +59,7 @@ func main() {
 				}
 				_, err := serverConnection.Write([]byte(responseData))
 				if err != nil {
-					fmt.Println("Error: Failed to Send Response")
+					printError("Failed to Send Response")
 					continue
 				}
 				serverResponseCnt++
@@ -71,7 +71,7 @@ func main() {
 func initServer() net.Listener {
 	serverListener, err := net.Listen("tcp", ":"+TCP_SERVER_PORT)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		printError(err.Error())
 		return nil
 	}
 
@@ -106,4 +106,12 @@ func getResponse(cmd int, data string, addr string) string {
 		return fmt.Sprintf("requests served = %d", serverResponseCnt)
 	}
 	return ""
+}
+
+func printError(msg string) {
+	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+	if err != nil {
+		fmt.Printf("Error: %s\n", msg)
+		return
+	}
 }
