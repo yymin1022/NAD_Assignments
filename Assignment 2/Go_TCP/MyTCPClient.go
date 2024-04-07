@@ -62,7 +62,7 @@ func main() {
 
 		timeRequest := time.Now().UnixMicro()
 
-		_, err := serverConnection.Write([]byte(string(rune(cmd)) + text))
+		_, err := serverConnection.Write([]byte(fmt.Sprintf("%d%s", cmd, text)))
 		if err != nil {
 			printError(err.Error())
 			continue
