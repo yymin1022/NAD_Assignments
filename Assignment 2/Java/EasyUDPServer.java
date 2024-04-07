@@ -1,15 +1,12 @@
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 
 public class EasyUDPServer {
     static int SERVER_PORT = 14094;
 
     static int serverResponseCnt = 0;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         DatagramSocket serverConnection = initServer();
         if (serverConnection == null) {
             printError("Failed to init server.");
@@ -19,26 +16,37 @@ public class EasyUDPServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> closeConnection(serverConnection)));
 
         while(true){
-            byte[] requestBuffer = new byte[1024];
-            DatagramPacket requestPacket = new DatagramPacket(requestBuffer, requestBuffer.length);
-            serverConnection.receive(requestPacket);
+            try {
+                byte[] requestBuffer = new byte[1024];
+                DatagramPacket requestPacket = new DatagramPacket(requestBuffer, requestBuffer.length);
+                serverConnection.receive(requestPacket);
 
-            String requestData = new String(requestPacket.getData()).trim();
-            String requestIP = requestPacket.getAddress().toString().substring(1);
-            int requestPort = requestPacket.getPort();
+                String requestData = new String(requestPacket.getData()).trim();
+                String requestIP = requestPacket.getAddress().toString().substring(1);
+                int requestPort = requestPacket.getPort();
 
-            String responseData = getResponse(requestData.charAt(0),
-                                                requestData.substring(1),
-                                                requestIP,
-                                                requestPort);
+                String responseData = getResponse(requestData.charAt(0),
+                        requestData.substring(1),
+                        requestIP,
+                        requestPort);
 
-            DatagramPacket responsePacket = new DatagramPacket(
-                    responseData.getBytes(),
-                    responseData.getBytes().length,
-                    InetAddress.getByName(requestIP),
-                    requestPort);
-            serverConnection.send(responsePacket);
-            serverResponseCnt++;
+                DatagramPacket responsePacket = new DatagramPacket(
+                        responseData.getBytes(),
+                        responseData.getBytes().length,
+                        InetAddress.getByName(requestIP),
+                        requestPort);
+                serverConnection.send(responsePacket);
+                serverResponseCnt++;
+            } catch (SocketException e) {
+                printError("Socket Error.");
+                break;
+            } catch (UnknownHostException e) {
+                printError("Client Error.");
+                break;
+            } catch (IOException e) {
+                printError("IO Error.");
+                break;
+            }
         }
     }
 
