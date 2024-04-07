@@ -13,6 +13,8 @@ public class EasyUDPClient {
             return;
         }
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> closeConnection(serverConnection)));
+
         try {
             serverConnection.setSoTimeout(5000);
             while (true) {
@@ -49,15 +51,9 @@ public class EasyUDPClient {
             }
         } catch (SocketTimeoutException e) {
             printError("Server Timeout.");
-            closeConnection(serverConnection);
-            return;
         } catch (IOException e) {
             printError("IO Error.");
-            closeConnection(serverConnection);
-            return;
         }
-
-        closeConnection(serverConnection);
     }
 
     private static DatagramSocket makeConnection() {
