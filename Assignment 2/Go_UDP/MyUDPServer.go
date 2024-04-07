@@ -23,7 +23,7 @@ var serverStartTime time.Time
 func main() {
 	serverConnection := initServer()
 	if serverConnection == nil {
-		fmt.Println("Error: Failed to Init Server")
+		printError("Failed to Init Server")
 		return
 	}
 
@@ -51,7 +51,7 @@ func main() {
 			responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
 			_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
 			if err != nil {
-				fmt.Println("Error: Failed to Send Response")
+				printError("Failed to Send Response")
 				continue
 			}
 			serverResponseCnt++
@@ -62,7 +62,7 @@ func main() {
 func initServer() net.PacketConn {
 	serverConnection, err := net.ListenPacket("udp", ":"+UDP_SERVER_PORT)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
+		printError(err.Error())
 		return nil
 	}
 
@@ -97,4 +97,12 @@ func getResponse(cmd int, data string, addr string) string {
 		return fmt.Sprintf("requests served = %d", serverResponseCnt)
 	}
 	return ""
+}
+
+func printError(msg string) {
+	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+	if err != nil {
+		fmt.Printf("Error: %s\n", msg)
+		return
+	}
 }
