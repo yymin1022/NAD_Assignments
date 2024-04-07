@@ -78,12 +78,14 @@ public class EasyUDPClient {
     }
 
     private static int readCommand() {
+        int cmd;
         String input;
 
         try {
             System.out.print("Input Command: ");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             input = reader.readLine();
+            cmd = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             printError("Invalid Command.");
             return 0;
@@ -92,7 +94,7 @@ public class EasyUDPClient {
             return 0;
         }
 
-        int cmd = Integer.parseInt(input);
+
         if (cmd < 1 || cmd > 5) {
             printError("Invalid Command.");
             return 0;
