@@ -92,8 +92,13 @@ func getResponse(cmd int, data string, addr string) string {
 	case 1:
 		return strings.ToUpper(data)
 	case 2:
-		curTime := time.Since(serverStartTime)
-		return fmt.Sprintf("run time = %02.0f:%02.0f:%02.0f", curTime.Hours(), curTime.Minutes(), curTime.Seconds())
+		curTime := time.Now()
+		upTime := int(curTime.Sub(serverStartTime).Seconds())
+		upTimeH := upTime / 3600
+		upTime %= 3600
+		upTimeM := upTime / 60
+		upTime %= 60
+		return fmt.Sprintf("run time = %02.0f:%02.0f:%02.0f", upTimeH, upTimeM, upTime)
 	case 3:
 		addrInfo := strings.Split(addr, ":")
 		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
