@@ -69,6 +69,7 @@ public class EasyUDPClient {
     }
 
     private static void closeConnection(DatagramSocket conn) {
+        System.out.println("\rClosing Client Program...\nBye bye~");
         conn.close();
     }
 
