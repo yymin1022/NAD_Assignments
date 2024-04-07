@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 
 public class EasyUDPServer {
@@ -16,11 +17,25 @@ public class EasyUDPServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> closeConnection(serverConnection)));
 
         while(true){
-            byte[] data = new byte[1024];
-            DatagramPacket dp = new DatagramPacket(data, data.length);
+            byte[] requestBuffer = new byte[1024];
+            DatagramPacket requestPacket = new DatagramPacket(requestBuffer, requestBuffer.length);
+            serverConnection.receive(requestPacket);
 
-            serverConnection.receive(dp);
-            System.out.println(new String(dp.getData()).trim());
+            String requestData = new String(requestPacket.getData()).trim();
+            String requestIP = requestPacket.getAddress().toString().substring(1);
+            int requestPort = requestPacket.getPort();
+
+            String responseData = getResponse(requestData.charAt(0),
+                                                requestData.substring(1),
+                                                requestIP,
+                                                String.valueOf(requestPort));
+
+            DatagramPacket responsePacket = new DatagramPacket(
+                    responseData.getBytes(),
+                    responseData.getBytes().length,
+                    InetAddress.getByName(requestIP),
+                    requestPort);
+            serverConnection.send(responsePacket);
         }
     }
 
@@ -35,6 +50,20 @@ public class EasyUDPServer {
     private static void closeConnection(DatagramSocket conn) {
         System.out.println("\rClosing Server Program...\nBye bye~");
         conn.close();
+    }
+
+    private static String getResponse(char cmd, String data, String addr, String port) {
+        switch (cmd) {
+            case '1':
+                return data.toUpperCase();
+            case '2':
+                return "UpTime";
+            case '3':
+                return "Client IP";
+            case '4':
+                return "Served Response";
+        }
+        return "";
     }
 
     private static void printError(String msg) {
