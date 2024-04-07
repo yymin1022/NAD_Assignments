@@ -61,9 +61,9 @@ public class EasyUDPClient {
     }
 
     private static DatagramSocket makeConnection() {
-        try{
+        try {
             return new DatagramSocket();
-        }catch (IOException e){
+        } catch (SocketException e) {
             return null;
         }
     }
