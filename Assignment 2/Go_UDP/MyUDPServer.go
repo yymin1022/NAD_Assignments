@@ -46,6 +46,8 @@ func main() {
 			fmt.Printf("UDP Connection Request from %s\n", requestAddr.String())
 
 			cmd, _ := strconv.Atoi(string(requestBuffer[0]))
+			fmt.Printf("Command %d\n", cmd)
+
 			responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
 			_, err := serverConnection.WriteTo([]byte(responseData), requestAddr)
 			if err != nil {
