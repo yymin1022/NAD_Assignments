@@ -64,17 +64,13 @@ public class EasyUDPServer {
     }
 
     private static String getResponse(char cmd, String data, String addr, int port) {
-        switch (cmd) {
-            case '1':
-                return data.toUpperCase();
-            case '2':
-                return "UpTime";
-            case '3':
-                return String.format("client IP = %s, port = %d", addr, port);
-            case '4':
-                return String.format("requests served = %d", serverResponseCnt);
-        }
-        return "";
+        return switch (cmd) {
+            case '1' -> data.toUpperCase();
+            case '2' -> "UpTime";
+            case '3' -> String.format("client IP = %s, port = %d", addr, port);
+            case '4' -> String.format("requests served = %d", serverResponseCnt);
+            default -> "";
+        };
     }
 
     private static void printError(String msg) {
