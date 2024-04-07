@@ -31,7 +31,12 @@ public class EasyTCPServer {
                     String requestIP = serverConnection.getInetAddress().toString();
                     int requestPort = serverConnection.getPort();
 
-                    System.out.printf("UDP Connection Request from %s:%d\n", requestIP, requestPort);
+                    if (requestData.equals("5")) {
+                        serverConnection.close();
+                        break;
+                    }
+
+                    System.out.printf("TCP Connection Request from %s:%d\n", requestIP, requestPort);
                     String responseData = getResponse(requestData.charAt(0),
                             requestData.substring(1),
                             requestIP,
