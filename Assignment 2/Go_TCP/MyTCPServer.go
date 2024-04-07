@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -47,7 +48,8 @@ func main() {
 				fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
 
 				count, _ := serverConnection.Read(requestBuffer)
-				responseData := getResponse(int(requestBuffer[0]), string(requestBuffer[1:count]), requestAddr.String())
+				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
+				responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
 
 				if responseData == "" {
 					_ = serverConnection.Close()
