@@ -30,7 +30,7 @@ public class EasyUDPServer {
             String responseData = getResponse(requestData.charAt(0),
                                                 requestData.substring(1),
                                                 requestIP,
-                                                String.valueOf(requestPort));
+                                                requestPort);
 
             DatagramPacket responsePacket = new DatagramPacket(
                     responseData.getBytes(),
@@ -55,14 +55,14 @@ public class EasyUDPServer {
         conn.close();
     }
 
-    private static String getResponse(char cmd, String data, String addr, String port) {
+    private static String getResponse(char cmd, String data, String addr, int port) {
         switch (cmd) {
             case '1':
                 return data.toUpperCase();
             case '2':
                 return "UpTime";
             case '3':
-                return "Client IP";
+                return String.format("client IP = %s, port = %d", addr, port);
             case '4':
                 return String.format("requests served = %d", serverResponseCnt);
         }
