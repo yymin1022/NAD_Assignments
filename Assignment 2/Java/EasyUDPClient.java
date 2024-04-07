@@ -14,6 +14,7 @@ public class EasyUDPClient {
         }
 
         try {
+            serverConnection.setSoTimeout(5000);
             while (true) {
                 printMenu();
 
@@ -28,7 +29,7 @@ public class EasyUDPClient {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                     text = reader.readLine();
 
-                    if(text.length() >= 1024){
+                    if (text.length() >= 1024) {
                         printError("Text too long.");
                         continue;
                     }
@@ -46,6 +47,10 @@ public class EasyUDPClient {
 
                 System.out.printf("\nReply from server: %s\n", new String(responseData.getData()).trim());
             }
+        } catch (SocketTimeoutException e) {
+            printError("Server Timeout.");
+            closeConnection(serverConnection);
+            return;
         } catch (IOException e) {
             printError("IO Error.");
             closeConnection(serverConnection);
