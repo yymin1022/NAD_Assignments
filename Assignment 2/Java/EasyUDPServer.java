@@ -1,10 +1,13 @@
 import java.io.IOException;
 import java.net.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 public class EasyUDPServer {
     static int SERVER_PORT = 14094;
 
-    static int serverResponseCnt = 0;
+    static int serverResponseCnt;
+    static LocalDateTime serverStartTime = null;
 
     public static void main(String[] args) {
         DatagramSocket serverConnection = initServer();
@@ -14,6 +17,9 @@ public class EasyUDPServer {
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> closeConnection(serverConnection)));
+
+        serverResponseCnt = 0;
+        serverStartTime = LocalDateTime.now();
 
         while(true){
             try {
@@ -64,13 +70,25 @@ public class EasyUDPServer {
     }
 
     private static String getResponse(char cmd, String data, String addr, int port) {
-        return switch (cmd) {
-            case '1' -> data.toUpperCase();
-            case '2' -> "UpTime";
-            case '3' -> String.format("client IP = %s, port = %d", addr, port);
-            case '4' -> String.format("requests served = %d", serverResponseCnt);
-            default -> "";
-        };
+        switch (cmd) {
+            case '1':
+                return data.toUpperCase();
+            case '2':
+                LocalDateTime curTime = LocalDateTime.now();
+                Duration upTime = Duration.between(serverStartTime, curTime);
+
+                long upTimeSeconds = upTime.getSeconds();
+                return String.format("run time = %02d:%02d:%02d",
+                                    upTimeSeconds / 3600,
+                                    (upTimeSeconds % 3600) / 60,
+                                    (upTimeSeconds % 3600) % 60);
+
+            case '3':
+                return String.format("client IP = %s, port = %d", addr, port);
+            case '4':
+                return String.format("requests served = %d", serverResponseCnt);
+        }
+        return "";
     }
 
     private static void printError(String msg) {
