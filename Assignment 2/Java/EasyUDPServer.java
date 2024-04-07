@@ -7,6 +7,8 @@ import java.net.SocketException;
 public class EasyUDPServer {
     static int SERVER_PORT = 14094;
 
+    static int serverResponseCnt = 0;
+
     public static void main(String[] args) throws IOException {
         DatagramSocket serverConnection = initServer();
         if (serverConnection == null) {
@@ -36,6 +38,7 @@ public class EasyUDPServer {
                     InetAddress.getByName(requestIP),
                     requestPort);
             serverConnection.send(responsePacket);
+            serverResponseCnt++;
         }
     }
 
@@ -61,7 +64,7 @@ public class EasyUDPServer {
             case '3':
                 return "Client IP";
             case '4':
-                return "Served Response";
+                return String.format("requests served = %d", serverResponseCnt);
         }
         return "";
     }
