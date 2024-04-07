@@ -31,6 +31,7 @@ public class EasyUDPServer {
                 String requestIP = requestPacket.getAddress().toString().substring(1);
                 int requestPort = requestPacket.getPort();
 
+                System.out.printf("UDP Connection Request from %s:%d\n", requestIP, requestPort);
                 String responseData = getResponse(requestData.charAt(0),
                         requestData.substring(1),
                         requestIP,
@@ -58,6 +59,7 @@ public class EasyUDPServer {
 
     private static DatagramSocket initServer() {
         try {
+            System.out.printf("Server is ready to receive on port %s\n", SERVER_PORT);
             return new DatagramSocket(SERVER_PORT);
         } catch (SocketException e) {
             return null;
