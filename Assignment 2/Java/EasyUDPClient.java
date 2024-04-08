@@ -38,9 +38,9 @@ public class EasyUDPClient {
                 }
 
                 long requestTime = System.nanoTime();
-                byte[] msgData = (cmd + text).getBytes(StandardCharsets.UTF_8);
+                byte[] requestBuffer = (cmd + text).getBytes(StandardCharsets.UTF_8);
                 DatagramPacket requestData = new DatagramPacket(
-                        msgData, msgData.length,
+                        requestBuffer, requestBuffer.length,
                         InetAddress.getByName(SERVER_NAME), SERVER_PORT);
                 serverConnection.send(requestData);
 
