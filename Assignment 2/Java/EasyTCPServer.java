@@ -37,6 +37,7 @@ public class EasyTCPServer {
                     }
 
                     System.out.printf("TCP Connection Request from %s:%d\n", requestIP, requestPort);
+                    System.out.printf("Command %c\n", requestData.charAt(0));
                     String responseData = getResponse(requestData.charAt(0),
                             requestData.substring(1),
                             requestIP,
