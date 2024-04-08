@@ -45,7 +45,6 @@ func main() {
 		for serverConnection != nil {
 			requestAddr := serverConnection.RemoteAddr()
 			if requestAddr != nil {
-				fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
 
 				count, _ := serverConnection.Read(requestBuffer)
 				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
@@ -56,6 +55,7 @@ func main() {
 					break
 				}
 
+				fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
 				fmt.Printf("Command %d\n", cmd)
 				_, err := serverConnection.Write([]byte(responseData))
 				if err != nil {
