@@ -76,7 +76,7 @@ public class EasyTCPClient {
             OutputStream requestStream = conn.getOutputStream();
             requestStream.write("5".getBytes(StandardCharsets.UTF_8));
             conn.close();
-        } catch (IOException _) {}
+        } catch (IOException e) {}
     }
 
     private static void printMenu() {

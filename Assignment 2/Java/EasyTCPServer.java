@@ -82,7 +82,7 @@ public class EasyTCPServer {
         System.out.println("\rClosing Server Program...\nBye bye~");
         try {
             conn.close();
-        } catch (IOException _) {}
+        } catch (IOException e) {}
     }
 
     private static String getResponse(char cmd, String data, String addr, int port) {
