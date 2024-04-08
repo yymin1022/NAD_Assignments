@@ -90,7 +90,7 @@ func closeServer(listener net.Listener) {
 func getResponse(cmd int, data string, addr string) string {
 	switch cmd {
 	case 1:
-		return strings.ToUpper(data)
+		return strings.TrimSpace(strings.ToUpper(data))
 	case 2:
 		curTime := time.Now()
 		upTime := int(curTime.Sub(serverStartTime).Seconds())
