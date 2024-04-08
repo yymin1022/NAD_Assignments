@@ -99,7 +99,7 @@ public class EasyUDPClient {
             printError("System Error.");
             return 0;
         }
-        
+
         if (cmd < 1 || cmd > 5) {
             printError("Invalid Command.");
             return 0;
