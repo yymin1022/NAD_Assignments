@@ -36,17 +36,17 @@ public class EasyUDPClient {
                         continue;
                     }
                 }
-
+                
+                long requestTime = System.nanoTime();
                 byte[] msgData = (cmd + text).getBytes(StandardCharsets.UTF_8);
                 DatagramPacket requestData = new DatagramPacket(
                         msgData, msgData.length,
                         InetAddress.getByName(SERVER_NAME), SERVER_PORT);
-
-                long requestTime = System.nanoTime();
                 serverConnection.send(requestData);
 
                 byte[] responseBuffer = new byte[1024];
-                DatagramPacket responseData = new DatagramPacket(responseBuffer, responseBuffer.length);
+                DatagramPacket responseData = new DatagramPacket(
+                        responseBuffer, responseBuffer.length);
                 serverConnection.receive(responseData);
                 long responseTime = System.nanoTime();
 
