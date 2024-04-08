@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 
 public class EasyTCPClient {
     static String SERVER_NAME = "localhost";
-    static int SERVER_PORT = 14094;
+    static int SERVER_PORT = 24094;
 
     public static void main(String[] args) {
         Socket serverConnection = makeConnection();

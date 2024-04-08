@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class EasyTCPServer {
-    static int SERVER_PORT = 14094;
+    static int SERVER_PORT = 24094;
 
     static int serverResponseCnt;
     static LocalDateTime serverStartTime = null;
