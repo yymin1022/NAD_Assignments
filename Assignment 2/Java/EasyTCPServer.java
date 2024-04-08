@@ -49,7 +49,8 @@ public class EasyTCPServer {
                                 requestIP,
                                 requestPort);
 
-                        responseStream.write(responseData.getBytes(StandardCharsets.UTF_8));
+                        byte[] responseBuffer = responseData.getBytes(StandardCharsets.UTF_8);
+                        responseStream.write(responseBuffer);
                         responseStream.flush();
 
                         serverResponseCnt++;
@@ -97,7 +98,6 @@ public class EasyTCPServer {
                         upTimeSeconds / 3600,
                         (upTimeSeconds % 3600) / 60,
                         (upTimeSeconds % 3600) % 60);
-
             case '3':
                 return String.format("client IP = %s, port = %d", addr, port);
             case '4':
