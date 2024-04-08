@@ -46,7 +46,6 @@ public class EasyUDPServer {
                 serverConnection.send(responsePacket);
                 serverResponseCnt++;
             } catch (SocketException e) {
-                printError("Socket Error.");
                 break;
             } catch (UnknownHostException e) {
                 printError("Client Error.");
