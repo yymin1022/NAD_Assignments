@@ -38,15 +38,19 @@ func main() {
 	serverResponseCnt = 0
 	serverStartTime = time.Now()
 
-	requestBuffer := make([]byte, 1024)
-
 	for {
 		serverConnection, _ := serverListener.Accept()
 		for serverConnection != nil {
 			requestAddr := serverConnection.RemoteAddr()
 			if requestAddr != nil {
+				requestBuffer := make([]byte, 1024)
 				count, _ := serverConnection.Read(requestBuffer)
 				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
+
+				if count == 0 {
+					_ = serverConnection.Close()
+					break
+				}
 
 				responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
 				if responseData == "" {
