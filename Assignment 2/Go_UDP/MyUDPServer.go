@@ -60,7 +60,7 @@ func main() {
 }
 
 func initServer() net.PacketConn {
-	serverConnection, err := net.ListenPacket("udp", ":"+UDP_SERVER_PORT)
+	serverConnection, err := net.ListenPacket("udp4", ":"+UDP_SERVER_PORT)
 	if err != nil {
 		printError(err.Error())
 		return nil

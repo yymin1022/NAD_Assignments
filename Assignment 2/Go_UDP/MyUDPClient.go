@@ -62,7 +62,7 @@ func main() {
 
 		timeRequest := time.Now().UnixMicro()
 
-		serverAddr, _ := net.ResolveUDPAddr("udp", SERVER_NAME+":"+SERVER_PORT)
+		serverAddr, _ := net.ResolveUDPAddr("udp4", SERVER_NAME+":"+SERVER_PORT)
 		_, err := serverConnection.WriteTo([]byte(fmt.Sprintf("%d%s", cmd, text)), serverAddr)
 		if err != nil {
 			printError(err.Error())
