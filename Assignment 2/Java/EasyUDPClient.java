@@ -36,7 +36,7 @@ public class EasyUDPClient {
                         continue;
                     }
                 }
-                
+
                 long requestTime = System.nanoTime();
                 byte[] msgData = (cmd + text).getBytes(StandardCharsets.UTF_8);
                 DatagramPacket requestData = new DatagramPacket(
@@ -99,8 +99,7 @@ public class EasyUDPClient {
             printError("System Error.");
             return 0;
         }
-
-
+        
         if (cmd < 1 || cmd > 5) {
             printError("Invalid Command.");
             return 0;
