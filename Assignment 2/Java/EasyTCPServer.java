@@ -34,7 +34,7 @@ public class EasyTCPServer {
                     String requestIP = serverConnection.getInetAddress().toString();
                     int requestPort = serverConnection.getPort();
 
-                    if (requestData.equals("5")) {
+                    if (requestData.equals("5") || requestData.isEmpty()) {
                         serverConnection.close();
                         break;
                     }
