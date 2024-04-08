@@ -26,8 +26,11 @@ public class EasyTCPServer {
                 Socket serverConnection = serverListener.accept();
 
                 while (true) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));																	// 데이터를 읽어옴
-                    String requestData = reader.readLine();
+                    byte[] requestBuffer = new byte[1024];
+                    InputStream requestStream = serverConnection.getInputStream();
+
+                    int requestSize = requestStream.read(requestBuffer);
+                    String requestData = new String(requestBuffer, 0, requestSize).trim();
                     String requestIP = serverConnection.getInetAddress().toString();
                     int requestPort = serverConnection.getPort();
 
