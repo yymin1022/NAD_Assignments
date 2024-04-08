@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -24,35 +25,41 @@ public class EasyTCPServer {
         while(true){
             try {
                 Socket serverConnection = serverListener.accept();
+                InputStream requestStream = serverConnection.getInputStream();
+                OutputStream responseStream = serverConnection.getOutputStream();
 
                 while (true) {
                     byte[] requestBuffer = new byte[1024];
-                    InputStream requestStream = serverConnection.getInputStream();
-
                     int requestSize = requestStream.read(requestBuffer);
-                    String requestData = new String(requestBuffer, 0, requestSize).trim();
-                    String requestIP = serverConnection.getInetAddress().toString();
-                    int requestPort = serverConnection.getPort();
 
-                    if (requestData.equals("5") || requestData.isEmpty()) {
-                        serverConnection.close();
-                        break;
+                    if(requestSize >= 0){
+                        String requestData = new String(requestBuffer, 0, requestSize).trim();
+                        String requestIP = serverConnection.getInetAddress().toString();
+                        int requestPort = serverConnection.getPort();
+
+                        if (requestData.equals("5") || requestData.isEmpty()) {
+                            serverConnection.close();
+                            break;
+                        }
+
+                        System.out.printf("TCP Connection Request from %s:%d\n", requestIP, requestPort);
+                        System.out.printf("Command %c\n", requestData.charAt(0));
+                        String responseData = getResponse(requestData.charAt(0),
+                                requestData.substring(1),
+                                requestIP,
+                                requestPort);
+
+                        responseStream.write(responseData.getBytes(StandardCharsets.UTF_8));
+                        responseStream.flush();
+
+                        serverResponseCnt++;
                     }
-
-                    System.out.printf("TCP Connection Request from %s:%d\n", requestIP, requestPort);
-                    System.out.printf("Command %c\n", requestData.charAt(0));
-                    String responseData = getResponse(requestData.charAt(0),
-                            requestData.substring(1),
-                            requestIP,
-                            requestPort);
-
-                    PrintWriter writer = new PrintWriter(new OutputStreamWriter(serverConnection.getOutputStream()));
-                    writer.print(responseData);
-                    writer.flush();
-                    serverResponseCnt++;
                 }
+
+                requestStream.close();
+                responseStream.close();
             } catch (IOException e) {
-                printError("IO Error.");
+                printError(e.toString());
                 break;
             }
         }

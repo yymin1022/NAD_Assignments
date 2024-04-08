@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class EasyTCPClient {
     static String SERVER_NAME = "localhost";
@@ -17,6 +18,9 @@ public class EasyTCPClient {
 
         try {
             serverConnection.setSoTimeout(5000);
+            OutputStream requestStream = serverConnection.getOutputStream();
+            InputStream responseStream = serverConnection.getInputStream();
+
             while (true) {
                 printMenu();
 
@@ -37,23 +41,26 @@ public class EasyTCPClient {
                     }
                 }
 
-                String requestData = String.format("%d%s\r\n", cmd, text);
+                String requestData = String.format("%d%s", cmd, text);
 
                 long requestTime = System.nanoTime();
-                OutputStream requestStream = serverConnection.getOutputStream();
                 requestStream.write(requestData.getBytes(StandardCharsets.UTF_8));
+                requestStream.flush();
 
-                BufferedReader responseReader = new BufferedReader(new InputStreamReader(serverConnection.getInputStream()));
-                String responseData = responseReader.readLine();
+                byte[] responseBuffer = new byte[1024];
+                int responseSize = responseStream.read(responseBuffer);
                 long responseTime = System.nanoTime();
 
-                System.out.printf("\nReply from server: %s\n", responseData.trim());
+                System.out.printf("\nReply from server: %s\n", new String(responseBuffer, 0, responseSize).trim());
                 System.out.printf("RTT = %.3fms\n", (responseTime - requestTime) / 1000000f);
             }
+
+            requestStream.close();
+            responseStream.close();
         } catch (SocketTimeoutException e) {
             printError("Server Timeout.");
         } catch (IOException e) {
-            printError("IO Error.");
+            printError(e.toString());
         }
     }
 
@@ -69,7 +76,7 @@ public class EasyTCPClient {
         System.out.println("\rClosing Client Program...\nBye bye~");
         try {
             OutputStream requestStream = conn.getOutputStream();
-            requestStream.write("5".getBytes(StandardCharsets.UTF_8));
+            requestStream.write("5\r\n".getBytes(StandardCharsets.UTF_8));
             conn.close();
         } catch (IOException _) {}
     }
