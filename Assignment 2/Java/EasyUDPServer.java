@@ -85,7 +85,6 @@ public class EasyUDPServer {
                                     upTimeSeconds / 3600,
                                     (upTimeSeconds % 3600) / 60,
                                     (upTimeSeconds % 3600) % 60);
-
             case '3':
                 return String.format("client IP = %s, port = %d", addr, port);
             case '4':
