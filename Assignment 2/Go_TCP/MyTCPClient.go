@@ -100,7 +100,7 @@ func main() {
 }
 
 func makeConnection() net.Conn {
-	conn, err := net.Dial("tcp", SERVER_NAME+":"+SERVER_PORT)
+	conn, err := net.Dial("tcp4", SERVER_NAME+":"+SERVER_PORT)
 
 	if err != nil {
 		printError(err.Error())

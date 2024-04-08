@@ -72,7 +72,7 @@ func main() {
 }
 
 func initServer() net.Listener {
-	serverListener, err := net.Listen("tcp", ":"+TCP_SERVER_PORT)
+	serverListener, err := net.Listen("tcp4", ":"+TCP_SERVER_PORT)
 	if err != nil {
 		printError(err.Error())
 		return nil
