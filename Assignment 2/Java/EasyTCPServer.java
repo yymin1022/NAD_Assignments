@@ -47,7 +47,7 @@ public class EasyTCPServer {
                             requestPort);
 
                     PrintWriter writer = new PrintWriter(new OutputStreamWriter(serverConnection.getOutputStream()));
-                    writer.println(responseData);
+                    writer.print(responseData);
                     writer.flush();
                     serverResponseCnt++;
                 }
@@ -77,7 +77,7 @@ public class EasyTCPServer {
     private static String getResponse(char cmd, String data, String addr, int port) {
         switch (cmd) {
             case '1':
-                return data.toUpperCase();
+                return data.toUpperCase().trim();
             case '2':
                 LocalDateTime curTime = LocalDateTime.now();
                 Duration upTime = Duration.between(serverStartTime, curTime);
