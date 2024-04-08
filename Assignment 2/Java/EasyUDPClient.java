@@ -3,7 +3,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 public class EasyUDPClient {
-    static String SERVER_NAME = "localhost";
+    static String SERVER_NAME = "nsl2.cau.ac.kr";
     static int SERVER_PORT = 14094;
 
     public static void main(String[] args) {
