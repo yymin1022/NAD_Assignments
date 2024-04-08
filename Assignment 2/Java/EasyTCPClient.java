@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class EasyTCPClient {
     static String SERVER_NAME = "localhost";
@@ -41,10 +40,9 @@ public class EasyTCPClient {
                     }
                 }
 
-                String requestData = String.format("%d%s", cmd, text);
-
                 long requestTime = System.nanoTime();
-                requestStream.write(requestData.getBytes(StandardCharsets.UTF_8));
+                byte[] requestBuffer = String.format("%d%s", cmd, text).getBytes(StandardCharsets.UTF_8);
+                requestStream.write(requestBuffer);
                 requestStream.flush();
 
                 byte[] responseBuffer = new byte[1024];
@@ -107,7 +105,6 @@ public class EasyTCPClient {
             printError("System Error.");
             return 0;
         }
-
 
         if (cmd < 1 || cmd > 5) {
             printError("Invalid Command.");
