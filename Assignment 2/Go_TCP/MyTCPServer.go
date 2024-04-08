@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const TCP_SERVER_PORT = "14094"
+const TCP_SERVER_PORT = "24094"
 
 var serverResponseCnt int
 var serverStartTime time.Time

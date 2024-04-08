@@ -16,7 +16,7 @@ import (
 )
 
 const SERVER_NAME = "localhost"
-const SERVER_PORT = "14094"
+const SERVER_PORT = "24094"
 
 func main() {
 	serverConnection := makeConnection()
