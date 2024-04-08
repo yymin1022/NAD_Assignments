@@ -45,7 +45,6 @@ func main() {
 		for serverConnection != nil {
 			requestAddr := serverConnection.RemoteAddr()
 			if requestAddr != nil {
-
 				count, _ := serverConnection.Read(requestBuffer)
 				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
 
