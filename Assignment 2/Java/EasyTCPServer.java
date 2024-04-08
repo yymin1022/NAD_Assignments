@@ -53,6 +53,9 @@ public class EasyTCPServer {
                         responseStream.flush();
 
                         serverResponseCnt++;
+                    }else{
+                        serverConnection.close();
+                        break;
                     }
                 }
 
