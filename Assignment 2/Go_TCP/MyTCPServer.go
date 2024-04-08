@@ -49,14 +49,14 @@ func main() {
 
 				count, _ := serverConnection.Read(requestBuffer)
 				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
-				fmt.Printf("Command %d\n", cmd)
 
 				responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
-
 				if responseData == "" {
 					_ = serverConnection.Close()
 					break
 				}
+
+				fmt.Printf("Command %d\n", cmd)
 				_, err := serverConnection.Write([]byte(responseData))
 				if err != nil {
 					printError("Failed to Send Response")
