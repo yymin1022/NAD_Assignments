@@ -38,9 +38,9 @@ public class EasyUDPServer {
                         requestIP,
                         requestPort);
 
+                byte[] responseBuffer = responseData.getBytes();
                 DatagramPacket responsePacket = new DatagramPacket(
-                        responseData.getBytes(),
-                        responseData.getBytes().length,
+                        responseBuffer, responseBuffer.length,
                         InetAddress.getByName(requestIP),
                         requestPort);
                 serverConnection.send(responsePacket);
