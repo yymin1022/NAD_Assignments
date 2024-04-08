@@ -76,7 +76,7 @@ public class EasyTCPClient {
         System.out.println("\rClosing Client Program...\nBye bye~");
         try {
             OutputStream requestStream = conn.getOutputStream();
-            requestStream.write("5\r\n".getBytes(StandardCharsets.UTF_8));
+            requestStream.write("5".getBytes(StandardCharsets.UTF_8));
             conn.close();
         } catch (IOException _) {}
     }
