@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const SERVER_NAME = "nsl2.cau.ac.kr"
+const SERVER_NAME = "localhost"
 const SERVER_PORT = "24094"
 
 func main() {
