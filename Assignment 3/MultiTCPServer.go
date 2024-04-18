@@ -42,34 +42,36 @@ func main() {
 
 	for {
 		serverConnection, _ := serverListener.Accept()
-		for serverConnection != nil {
-			requestAddr := serverConnection.RemoteAddr()
-			if requestAddr != nil {
-				requestBuffer := make([]byte, 1024)
-				count, _ := serverConnection.Read(requestBuffer)
-				cmd, _ := strconv.Atoi(string(requestBuffer[0]))
+		go func() {
+			for serverConnection != nil {
+				requestAddr := serverConnection.RemoteAddr()
+				if requestAddr != nil {
+					requestBuffer := make([]byte, 1024)
+					count, _ := serverConnection.Read(requestBuffer)
+					cmd, _ := strconv.Atoi(string(requestBuffer[0]))
 
-				if count == 0 {
-					_ = serverConnection.Close()
-					break
-				}
+					if count == 0 {
+						_ = serverConnection.Close()
+						break
+					}
 
-				responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
-				if responseData == "" {
-					_ = serverConnection.Close()
-					break
-				}
+					responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
+					if responseData == "" {
+						_ = serverConnection.Close()
+						break
+					}
 
-				fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
-				fmt.Printf("Command %d\n", cmd)
-				_, err := serverConnection.Write([]byte(responseData))
-				if err != nil {
-					printError("Failed to Send Response")
-					continue
+					fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
+					fmt.Printf("Command %d\n", cmd)
+					_, err := serverConnection.Write([]byte(responseData))
+					if err != nil {
+						printError("Failed to Send Response")
+						continue
+					}
+					serverResponseCnt++
 				}
-				serverResponseCnt++
 			}
-		}
+		}()
 	}
 }
 
