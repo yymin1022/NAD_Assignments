@@ -1,5 +1,7 @@
 /**
  * TCPClient.go
+ * ID : 20194094
+ * Name : Yongmin Yoo
  **/
 
 package main
