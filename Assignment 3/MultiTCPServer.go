@@ -136,11 +136,7 @@ func printLog(msg string) {
 	curTimeH := curTime.Hour()
 	curTimeM := curTime.Minute()
 	curTimeS := curTime.Second()
-	_, err := fmt.Printf("[Time: %02d:%02d:%02d] %s\n", curTimeH, curTimeM, curTimeS, msg)
-	if err != nil {
-		printError("STDOUT Print Error")
-		return
-	}
+	fmt.Printf("[Time: %02d:%02d:%02d] %s\n", curTimeH, curTimeM, curTimeS, msg)
 }
 
 func printError(msg string) {
