@@ -75,8 +75,8 @@ func main() {
 						break
 					}
 
-					fmt.Printf("TCP Connection Request from %s\n", requestAddr.String())
-					fmt.Printf("Command %d\n", cmd)
+					printLog(fmt.Sprintf("TCP Connection Request from %s", requestAddr.String()))
+					printLog(fmt.Sprintf("Command %d", cmd))
 					_, err := serverConnection.Write([]byte(responseData))
 					if err != nil {
 						printError("Failed to Send Response")
