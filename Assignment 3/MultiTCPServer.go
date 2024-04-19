@@ -124,7 +124,7 @@ func getResponse(cmd int, data string, addr string) string {
 }
 
 func printLog(msg string) {
-	_, err := fmt.Printf("[Time: HH:MM:SS] %s", msg)
+	_, err := fmt.Printf("[Time: HH:MM:SS] %s\n", msg)
 	if err != nil {
 		printError("STDOUT Print Error")
 		return
