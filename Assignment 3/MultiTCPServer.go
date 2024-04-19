@@ -37,6 +37,14 @@ func main() {
 		os.Exit(0)
 	}()
 
+	go func() {
+		for {
+			serverTimer := time.NewTimer(time.Second * 10)
+			<-serverTimer.C
+			fmt.Println("Server Timer.")
+		}
+	}()
+
 	serverResponseCnt = 0
 	serverStartTime = time.Now()
 
