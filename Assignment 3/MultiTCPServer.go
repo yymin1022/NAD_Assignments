@@ -38,6 +38,7 @@ func main() {
 	}()
 
 	clientCnt := 0
+	clientID := 0
 	go func() {
 		for {
 			serverTimer := time.NewTimer(time.Second * 10)
@@ -53,6 +54,9 @@ func main() {
 		serverConnection, _ := serverListener.Accept()
 		go func() {
 			clientCnt++
+			clientID++
+			curClientID := clientID
+			printLog(fmt.Sprintf("Client %d connected. Number of clients connected = %d", curClientID, clientCnt))
 			for serverConnection != nil {
 				requestAddr := serverConnection.RemoteAddr()
 				if requestAddr != nil {
@@ -82,6 +86,7 @@ func main() {
 				}
 			}
 			clientCnt--
+			printLog(fmt.Sprintf("Client %d connected. Number of clients connected = %d", curClientID, clientCnt))
 		}()
 	}
 }
