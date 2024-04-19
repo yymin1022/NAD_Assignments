@@ -37,11 +37,12 @@ func main() {
 		os.Exit(0)
 	}()
 
+	clientCnt := 0
 	go func() {
 		for {
 			serverTimer := time.NewTimer(time.Second * 10)
 			<-serverTimer.C
-			printLog("Server Timer.")
+			printLog(fmt.Sprintf("Number of clients connected = %d", clientCnt))
 		}
 	}()
 
@@ -51,6 +52,7 @@ func main() {
 	for {
 		serverConnection, _ := serverListener.Accept()
 		go func() {
+			clientCnt++
 			for serverConnection != nil {
 				requestAddr := serverConnection.RemoteAddr()
 				if requestAddr != nil {
@@ -79,6 +81,7 @@ func main() {
 					serverResponseCnt++
 				}
 			}
+			clientCnt--
 		}()
 	}
 }
