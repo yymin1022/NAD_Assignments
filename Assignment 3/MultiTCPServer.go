@@ -132,7 +132,11 @@ func getResponse(cmd int, data string, addr string) string {
 }
 
 func printLog(msg string) {
-	_, err := fmt.Printf("[Time: HH:MM:SS] %s\n", msg)
+	curTime := time.Now()
+	curTimeH := curTime.Hour()
+	curTimeM := curTime.Minute()
+	curTimeS := curTime.Second()
+	_, err := fmt.Printf("[Time: %02d:%02d:%02d] %s\n", curTimeH, curTimeM, curTimeS, msg)
 	if err != nil {
 		printError("STDOUT Print Error")
 		return
