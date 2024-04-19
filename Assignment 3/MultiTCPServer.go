@@ -41,7 +41,7 @@ func main() {
 		for {
 			serverTimer := time.NewTimer(time.Second * 10)
 			<-serverTimer.C
-			fmt.Println("Server Timer.")
+			printLog("Server Timer.")
 		}
 	}()
 
