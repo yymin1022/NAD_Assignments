@@ -86,7 +86,7 @@ func main() {
 				}
 			}
 			clientCnt--
-			printLog(fmt.Sprintf("Client %d connected. Number of clients connected = %d", curClientID, clientCnt))
+			printLog(fmt.Sprintf("Client %d disconnected. Number of clients connected = %d", curClientID, clientCnt))
 		}()
 	}
 }
