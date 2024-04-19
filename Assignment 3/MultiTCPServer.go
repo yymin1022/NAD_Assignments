@@ -123,6 +123,14 @@ func getResponse(cmd int, data string, addr string) string {
 	return ""
 }
 
+func printLog(msg string) {
+	_, err := fmt.Printf("[Time: HH:MM:SS] %s", msg)
+	if err != nil {
+		printError("STDOUT Print Error")
+		return
+	}
+}
+
 func printError(msg string) {
 	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
 	if err != nil {
