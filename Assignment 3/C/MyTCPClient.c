@@ -1,3 +1,9 @@
+/**
+ * TCPClient.c
+ * ID : 20194094
+ * Name : Yongmin Yoo
+ **/
+
 #include <stdio.h>
 
 int main() {
