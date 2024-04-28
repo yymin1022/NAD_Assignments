@@ -17,7 +17,7 @@ int exit_error(char *err_msg);
 
 int main()
 {
-    ssize_t             socket_fd;
+    int                 socket_fd;
     struct sockaddr_in  server_addr;
 
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
