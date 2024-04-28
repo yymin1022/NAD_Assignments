@@ -1,3 +1,7 @@
+# TCP Makefile
+# ID : 20194094
+# Name : Yongmin Yoo
+
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra
 
