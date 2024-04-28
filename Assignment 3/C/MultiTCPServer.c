@@ -22,6 +22,8 @@ int main() {
     int                 server_option = 1;
     int                 server_socket_fd;
     fd_set              client_fds;
+    time_t              time_data;
+    struct tm           start_time;
     struct sockaddr_in  server_addr;
 
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -44,14 +46,25 @@ int main() {
     FD_SET(server_socket_fd, &client_fds);
     max_fd_cnt = server_socket_fd;
 
+    time_data = time(NULL);
+    localtime_r(&time_data, &start_time);
     while (1)
     {
         fd_set          tmp_fds;
+        struct tm       cur_time;
         struct timeval  timeout_val;
 
         tmp_fds = client_fds;
-        timeout_val.tv_sec = 10;
-        timeout_val.tv_usec = 0;
+        timeout_val.tv_sec = 0;
+        timeout_val.tv_usec = 500000;
+
+        time_data = time(NULL);
+        localtime_r(&time_data, &cur_time);
+        if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
+        {
+            write(1, "TIMEOUT 10 PRINT_CLIENT_NUM\n", 11);
+            usleep(500000);
+        }
 
         if (select(max_fd_cnt + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
             exit_error("Select Error");
