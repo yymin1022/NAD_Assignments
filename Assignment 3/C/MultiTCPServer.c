@@ -6,6 +6,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,9 +22,11 @@ char    *get_response(int cmd, char *data, int fd);
 char    *str_toupper(char *str);
 int     exit_error(char *err_msg);
 void    print_time();
+void    sigint_handler(int signal);
 
-int         server_response_cnt = 0;
-time_t      server_start_time_data;
+int     server_response_cnt = 0;
+int     server_socket_fd;
+time_t  server_start_time_data;
 
 int main()
 {
@@ -31,10 +34,11 @@ int main()
     int                 client_id;
     int                 server_binder;
     int                 server_option = 1;
-    int                 server_socket_fd;
     fd_set              client_fds;
     struct sockaddr_in  server_addr;
     struct tm           server_start_time;
+
+    signal(SIGINT, sigint_handler);
 
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
@@ -215,4 +219,14 @@ void    print_time()
     time_data = time(NULL);
     localtime_r(&time_data, &up_time);
     printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
+}
+
+void    sigint_handler(int signal)
+{
+    if (signal == SIGINT)
+    {
+        close(server_socket_fd);
+        printf("\rClosing Server Program...\nBye bye~\n");
+        exit(0);
+    }
 }
