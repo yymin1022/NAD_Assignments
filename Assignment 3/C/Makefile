@@ -23,4 +23,7 @@ clean:
 
 re: clean all
 
-.PHONY: $(TARGET) clean re
+test: all
+	./MultiTCPServer
+
+.PHONY: $(TARGET) clean re test
