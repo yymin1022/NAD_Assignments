@@ -97,10 +97,19 @@ int main() {
 //                    ssize_t server_res_len;
 
                     client_req_len = read(fd, client_req_val, BUF_SIZE);
-                    write(1, "Client Message : ", 17);
-                    write(1, client_req_val, client_req_len);
-                    write(1, "\n", 1);
-                    write(fd, "Hello", 5);
+                    if (client_req_len == 0)
+                    {
+                        FD_CLR(fd, &client_fds);
+                        close(fd);
+                        client_cnt--;
+                    }
+                    else
+                    {
+                        write(1, "Client Message : ", 17);
+                        write(1, client_req_val, client_req_len);
+                        write(1, "\n", 1);
+                        write(fd, "Hello", 5);
+                    }
                 }
             }
         }
