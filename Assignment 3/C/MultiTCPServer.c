@@ -16,7 +16,7 @@
 #define SERVER_PORT 24094
 
 int     exit_error(char *err_msg);
-void    print_time(time_t *start_time);
+void    print_time();
 
 int main() {
     int                 client_cnt;
@@ -67,7 +67,7 @@ int main() {
         gmtime_r(&cur_time_data, &cur_time);
         if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
         {
-            print_time(&start_time_data);
+            print_time();
             printf("Number of clients connected = %d\n", client_cnt);
             usleep(500000);
         }
@@ -120,13 +120,13 @@ int main() {
     return 0;
 }
 
-void    print_time(time_t *start_time)
+void    print_time()
 {
     time_t      time_data;
     struct tm   up_time;
 
-    time_data = time(NULL) - *start_time;
-    gmtime_r(&time_data, &up_time);
+    time_data = time(NULL);
+    localtime_r(&time_data, &up_time);
     printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
 }
 
