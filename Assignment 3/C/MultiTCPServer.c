@@ -90,6 +90,8 @@ int main() {
                     FD_SET(client_socket_fd, &client_fds);
                     if (client_id < client_socket_fd)
                         client_id = client_socket_fd;
+                    print_time();
+                    printf("Client %d connected. Number of clients connected = %d\n", client_socket_fd, client_cnt);
                     client_cnt++;
                 }
                 else
@@ -104,6 +106,8 @@ int main() {
                     {
                         FD_CLR(fd, &client_fds);
                         close(fd);
+                        print_time();
+                        printf("Client %d disconnected. Number of clients connected = %d\n", fd, client_cnt);
                         client_cnt--;
                     }
                     else
@@ -120,6 +124,14 @@ int main() {
     return 0;
 }
 
+int exit_error(char *err_msg)
+{
+    write(2, "Error: ", 7);
+    write(2, err_msg, strlen(err_msg));
+    write(2, "\n", 1);
+    exit(-1);
+}
+
 void    print_time()
 {
     time_t      time_data;
@@ -128,12 +140,4 @@ void    print_time()
     time_data = time(NULL);
     localtime_r(&time_data, &up_time);
     printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
-}
-
-int exit_error(char *err_msg)
-{
-    write(2, "Error: ", 7);
-    write(2, err_msg, strlen(err_msg));
-    write(2, "\n", 1);
-    exit(-1);
 }
