@@ -17,7 +17,7 @@
 int exit_error(char *err_msg);
 
 int main() {
-    int                 max_fd_cnt;
+    int                 client_cnt;
     int                 server_binder;
     int                 server_option = 1;
     int                 server_socket_fd;
@@ -44,7 +44,7 @@ int main() {
 
     FD_ZERO(&client_fds);
     FD_SET(server_socket_fd, &client_fds);
-    max_fd_cnt = server_socket_fd;
+    client_cnt = server_socket_fd;
 
     time_data = time(NULL);
     localtime_r(&time_data, &start_time);
@@ -66,24 +66,24 @@ int main() {
             usleep(500000);
         }
 
-        if (select(max_fd_cnt + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
+        if (select(client_cnt + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
             exit_error("Select Error");
-        for (int fd = 0; fd < max_fd_cnt + 1; fd++)
+        for (int fd = 0; fd < client_cnt + 1; fd++)
         {
             if (FD_ISSET(fd, &tmp_fds))
             {
                 if (fd == server_socket_fd)
                 {
                     int                 client_socket_fd;
-                    socklen_t         client_len;
+                    socklen_t           client_len;
                     struct sockaddr_in  client_addr;
 
                     client_len = sizeof(client_addr);
                     client_socket_fd = accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_len);
 
                     FD_SET(client_socket_fd, &client_fds);
-                    if (max_fd_cnt < client_socket_fd)
-                        max_fd_cnt = client_socket_fd;
+                    if (client_cnt < client_socket_fd)
+                        client_cnt = client_socket_fd;
                 }
                 else
                 {
