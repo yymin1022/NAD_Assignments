@@ -21,16 +21,18 @@ int     exit_error(char *err_msg);
 void    print_time();
 void    str_toupper(char *str);
 
-int main() {
+time_t      server_start_time_data;
+
+int main()
+{
     int                 client_cnt;
     int                 client_id;
     int                 server_binder;
     int                 server_option = 1;
     int                 server_socket_fd;
     fd_set              client_fds;
-    time_t              start_time_data;
-    struct tm           start_time;
     struct sockaddr_in  server_addr;
+    struct tm           server_start_time;
 
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
@@ -52,8 +54,8 @@ int main() {
     FD_SET(server_socket_fd, &client_fds);
     client_id = server_socket_fd;
 
-    start_time_data = time(NULL);
-    localtime_r(&start_time_data, &start_time);
+    server_start_time_data = time(NULL);
+    gmtime_r(&server_start_time_data, &server_start_time);
     client_cnt = 0;
     while (1)
     {
@@ -68,7 +70,7 @@ int main() {
 
         cur_time_data = time(NULL);
         gmtime_r(&cur_time_data, &cur_time);
-        if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
+        if ((cur_time.tm_sec - server_start_time.tm_sec) % 10 == 0)
         {
             print_time();
             printf("Number of clients connected = %d\n", client_cnt);
@@ -127,21 +129,27 @@ int main() {
             }
         }
     }
-    return 0;
 }
 
 char    *get_response(int cmd, char *data, int fd)
 {
+    char                *res;
     socklen_t           addr_size;
+    time_t              cur_time_data;
     struct sockaddr_in  addr_info;
-    (void)data;
+    struct tm           cur_time;
+
     switch (cmd)
     {
         case 1:
             str_toupper(data);
             return (data);
         case 2:
-            return ("Option 2");
+            cur_time_data = time(NULL) - server_start_time_data;
+            gmtime_r(&cur_time_data, &cur_time);
+            res = malloc(19 * sizeof(char));
+            sprintf(res, "run time = %02d:%02d:%02d", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
+            return (res);
         case 3:
             addr_size = sizeof(struct sockaddr_in);
             getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
