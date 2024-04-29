@@ -91,9 +91,9 @@ int main() {
                     FD_SET(client_socket_fd, &client_fds);
                     if (client_id < client_socket_fd)
                         client_id = client_socket_fd;
+                    client_cnt++;
                     print_time();
                     printf("Client %d connected. Number of clients connected = %d\n", client_socket_fd, client_cnt);
-                    client_cnt++;
                 }
                 else
                 {
@@ -108,9 +108,9 @@ int main() {
                     {
                         FD_CLR(fd, &client_fds);
                         close(fd);
+                        client_cnt--;
                         print_time();
                         printf("Client %d disconnected. Number of clients connected = %d\n", fd, client_cnt);
-                        client_cnt--;
                         continue;
                     }
 
