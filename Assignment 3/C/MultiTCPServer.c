@@ -18,9 +18,9 @@
 
 char    *get_client_ip_port(int fd);
 char    *get_response(int cmd, char *data, int fd);
+char    *str_toupper(char *str);
 int     exit_error(char *err_msg);
 void    print_time();
-void    str_toupper(char *str);
 
 int         server_response_cnt = 0;
 time_t      server_start_time_data;
@@ -121,13 +121,23 @@ int main()
                     }
 
                     client_req_cmd = client_req_val[0] - '0';
-                    server_res_val = get_response(client_req_cmd, client_req_val + 1, fd);
-                    server_res_len = strlen(server_res_val);
-                    print_time();
-                    printf("TCP Connection Request from %s\n", "ADDR");
-                    printf("Command %d\n", client_req_cmd);
-                    write(fd, server_res_val, server_res_len);
-                    server_response_cnt++;
+
+                    if(client_req_cmd > 0)
+                    {
+                        char *client_ip_port = get_client_ip_port(fd);
+                        print_time();
+                        printf("TCP Connection Request from %s\n", client_ip_port);
+                        printf("Command %d\n", client_req_cmd);
+                        free(client_ip_port);
+
+                        server_res_val = get_response(client_req_cmd, client_req_val + 1, fd);
+                        server_res_len = strlen(server_res_val);
+                        write(fd, server_res_val, server_res_len);
+                        if (server_res_val)
+                            free(server_res_val);
+
+                        server_response_cnt++;
+                    }
                 }
             }
         }
@@ -143,8 +153,7 @@ char    *get_response(int cmd, char *data, int fd)
     switch (cmd)
     {
         case 1:
-            str_toupper(data);
-            return (data);
+            return (strdup(str_toupper(data)));
         case 2:
             cur_time_data = time(NULL) - server_start_time_data;
             gmtime_r(&cur_time_data, &cur_time);
@@ -176,15 +185,7 @@ char *get_client_ip_port(int fd)
     return (strdup(strcat(client_ip, client_port)));
 }
 
-int exit_error(char *err_msg)
-{
-    write(2, "Error: ", 7);
-    write(2, err_msg, strlen(err_msg));
-    write(2, "\n", 1);
-    exit(-1);
-}
-
-void    str_toupper(char *str)
+char    *str_toupper(char *str)
 {
     size_t  i;
 
@@ -195,6 +196,15 @@ void    str_toupper(char *str)
             str[i] = str[i] - 'a' + 'A';
         i++;
     }
+    return (str);
+}
+
+int exit_error(char *err_msg)
+{
+    write(2, "Error: ", 7);
+    write(2, err_msg, strlen(err_msg));
+    write(2, "\n", 1);
+    exit(-1);
 }
 
 void    print_time()
