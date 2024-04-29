@@ -156,9 +156,9 @@ int main()
 
 char    *get_response(int cmd, char *data, int fd)
 {
-    char                *res;
-    time_t              cur_time_data;
-    struct tm           cur_time;
+    char        *res;
+    time_t      cur_time_data;
+    struct tm   cur_time;
 
     switch (cmd)
     {
