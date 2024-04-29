@@ -21,6 +21,7 @@ int     exit_error(char *err_msg);
 void    print_time();
 void    str_toupper(char *str);
 
+int         server_response_cnt = 0;
 time_t      server_start_time_data;
 
 int main()
@@ -125,6 +126,7 @@ int main()
                     printf("TCP Connection Request from %s\n", "ADDR");
                     printf("Command %d\n", client_req_cmd);
                     write(fd, server_res_val, server_res_len);
+                    server_response_cnt++;
                 }
             }
         }
@@ -147,7 +149,7 @@ char    *get_response(int cmd, char *data, int fd)
         case 2:
             cur_time_data = time(NULL) - server_start_time_data;
             gmtime_r(&cur_time_data, &cur_time);
-            res = malloc(19 * sizeof(char));
+            res = malloc(20 * sizeof(char));
             sprintf(res, "run time = %02d:%02d:%02d", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
             return (res);
         case 3:
@@ -159,7 +161,9 @@ char    *get_response(int cmd, char *data, int fd)
             sprintf(client_port, ":%d", addr_info.sin_port);
             return (strdup(strcat(client_ip, client_port)));
         case 4:
-            return ("Option 4");
+            res = malloc(20 * sizeof(char));
+            sprintf(res, "requests served = %d", server_response_cnt);
+            return (res);
         default:
             return ("");
     }
