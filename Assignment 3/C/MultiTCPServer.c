@@ -4,6 +4,7 @@
  * Name : Yongmin Yoo
  **/
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,9 +16,10 @@
 #define BUF_SIZE 1024
 #define SERVER_PORT 24094
 
-char    *get_response(int cmd, char *data, char *addr);
+char    *get_response(int cmd, char *data, int fd);
 int     exit_error(char *err_msg);
 void    print_time();
+void    str_toupper(char *str);
 
 int main() {
     int                 client_cnt;
@@ -115,7 +117,7 @@ int main() {
                     }
 
                     client_req_cmd = client_req_val[0] - '0';
-                    server_res_val = get_response(client_req_cmd, client_req_val + 1, "");
+                    server_res_val = get_response(client_req_cmd, client_req_val + 1, fd);
                     server_res_len = strlen(server_res_val);
                     print_time();
                     printf("TCP Connection Request from %s\n", "ADDR");
@@ -128,18 +130,26 @@ int main() {
     return 0;
 }
 
-char    *get_response(int cmd, char *data, char *addr)
+char    *get_response(int cmd, char *data, int fd)
 {
-    (void)addr;
+    socklen_t           addr_size;
+    struct sockaddr_in  addr_info;
     (void)data;
     switch (cmd)
     {
         case 1:
-            return ("Option 1");
+            str_toupper(data);
+            return (data);
         case 2:
             return ("Option 2");
         case 3:
-            return ("Option 3");
+            addr_size = sizeof(struct sockaddr_in);
+            getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
+            char client_ip[30];
+            char client_port[6];
+            strcpy(client_ip, inet_ntoa(addr_info.sin_addr));
+            sprintf(client_port, ":%d", addr_info.sin_port);
+            return (strdup(strcat(client_ip, client_port)));
         case 4:
             return ("Option 4");
         default:
@@ -153,6 +163,19 @@ int exit_error(char *err_msg)
     write(2, err_msg, strlen(err_msg));
     write(2, "\n", 1);
     exit(-1);
+}
+
+void    str_toupper(char *str)
+{
+    size_t  i;
+
+    i = 0;
+    while(str[i])
+    {
+        if (str[i] >= 'a' && str[i] <= 'z')
+            str[i] = str[i] - 'a' + 'A';
+        i++;
+    }
 }
 
 void    print_time()
