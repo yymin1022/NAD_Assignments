@@ -16,6 +16,7 @@
 #define BUF_SIZE 1024
 #define SERVER_PORT 24094
 
+char    *get_client_ip_port(int fd);
 char    *get_response(int cmd, char *data, int fd);
 int     exit_error(char *err_msg);
 void    print_time();
@@ -136,9 +137,7 @@ int main()
 char    *get_response(int cmd, char *data, int fd)
 {
     char                *res;
-    socklen_t           addr_size;
     time_t              cur_time_data;
-    struct sockaddr_in  addr_info;
     struct tm           cur_time;
 
     switch (cmd)
@@ -153,13 +152,7 @@ char    *get_response(int cmd, char *data, int fd)
             sprintf(res, "run time = %02d:%02d:%02d", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
             return (res);
         case 3:
-            addr_size = sizeof(struct sockaddr_in);
-            getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
-            char client_ip[30];
-            char client_port[6];
-            strcpy(client_ip, inet_ntoa(addr_info.sin_addr));
-            sprintf(client_port, ":%d", addr_info.sin_port);
-            return (strdup(strcat(client_ip, client_port)));
+            return (get_client_ip_port(fd));
         case 4:
             res = malloc(20 * sizeof(char));
             sprintf(res, "requests served = %d", server_response_cnt);
@@ -167,6 +160,20 @@ char    *get_response(int cmd, char *data, int fd)
         default:
             return ("");
     }
+}
+
+char *get_client_ip_port(int fd)
+{
+    char                client_ip[30];
+    char                client_port[6];
+    socklen_t           addr_size;
+    struct sockaddr_in  addr_info;
+
+    addr_size = sizeof(struct sockaddr_in);
+    getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
+    strcpy(client_ip, inet_ntoa(addr_info.sin_addr));
+    sprintf(client_port, ":%d", addr_info.sin_port);
+    return (strdup(strcat(client_ip, client_port)));
 }
 
 int exit_error(char *err_msg)
