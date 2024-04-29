@@ -5,6 +5,7 @@
  **/
 
 #include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -18,6 +19,7 @@ int exit_error(char *err_msg);
 
 int main() {
     int                 client_cnt;
+    int                 client_id;
     int                 server_binder;
     int                 server_option = 1;
     int                 server_socket_fd;
@@ -40,14 +42,15 @@ int main() {
     server_binder = listen(server_socket_fd, 128);
     if (server_binder != 0)
         return (exit_error("Socket Listening Error"));
-    write(1, "Server Started!\n", 16);
+    printf("Server is ready to receive on port %d\n", SERVER_PORT);
 
     FD_ZERO(&client_fds);
     FD_SET(server_socket_fd, &client_fds);
-    client_cnt = server_socket_fd;
+    client_id = server_socket_fd;
 
     time_data = time(NULL);
     localtime_r(&time_data, &start_time);
+    client_cnt = 0;
     while (1)
     {
         fd_set          tmp_fds;
@@ -62,13 +65,13 @@ int main() {
         localtime_r(&time_data, &cur_time);
         if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
         {
-            write(1, "TIMEOUT 10 PRINT_CLIENT_NUM\n", 11);
+            printf("Number of clients connected = %d\n", client_cnt);
             usleep(500000);
         }
 
-        if (select(client_cnt + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
+        if (select(client_id + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
             exit_error("Select Error");
-        for (int fd = 0; fd < client_cnt + 1; fd++)
+        for (int fd = 0; fd < client_id + 1; fd++)
         {
             if (FD_ISSET(fd, &tmp_fds))
             {
@@ -82,8 +85,9 @@ int main() {
                     client_socket_fd = accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_len);
 
                     FD_SET(client_socket_fd, &client_fds);
-                    if (client_cnt < client_socket_fd)
-                        client_cnt = client_socket_fd;
+                    if (client_id < client_socket_fd)
+                        client_id = client_socket_fd;
+                    client_cnt++;
                 }
                 else
                 {
