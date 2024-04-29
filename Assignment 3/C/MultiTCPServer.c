@@ -5,6 +5,7 @@
  **/
 
 #include <arpa/inet.h>
+#include <limits.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
@@ -24,6 +25,7 @@ int     exit_error(char *err_msg);
 void    print_time();
 void    sigint_handler(int signal);
 
+int     client_fd_id[OPEN_MAX];
 int     server_response_cnt = 0;
 int     server_socket_fd;
 time_t  server_start_time_data;
@@ -31,6 +33,7 @@ time_t  server_start_time_data;
 int main()
 {
     int                 client_cnt;
+    int                 client_fd_max;
     int                 client_id;
     int                 server_binder;
     int                 server_option = 1;
@@ -58,11 +61,12 @@ int main()
 
     FD_ZERO(&client_fds);
     FD_SET(server_socket_fd, &client_fds);
-    client_id = server_socket_fd;
+    client_fd_max = server_socket_fd;
 
     server_start_time_data = time(NULL);
     gmtime_r(&server_start_time_data, &server_start_time);
     client_cnt = 0;
+    client_id = 1;
     while (1)
     {
         fd_set          tmp_fds;
@@ -83,9 +87,9 @@ int main()
             usleep(500000);
         }
 
-        if (select(client_id + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
+        if (select(client_fd_max + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
             exit_error("Select Error");
-        for (int fd = 0; fd < client_id + 1; fd++)
+        for (int fd = 0; fd < client_fd_max + 1; fd++)
         {
             if (FD_ISSET(fd, &tmp_fds))
             {
@@ -97,13 +101,15 @@ int main()
 
                     client_len = sizeof(client_addr);
                     client_socket_fd = accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_len);
+                    client_fd_id[client_socket_fd] = client_id;
 
                     FD_SET(client_socket_fd, &client_fds);
-                    if (client_id < client_socket_fd)
-                        client_id = client_socket_fd;
+                    if (client_fd_max < client_socket_fd)
+                        client_fd_max = client_socket_fd;
                     client_cnt++;
+                    client_id++;
                     print_time();
-                    printf("Client %d connected. Number of clients connected = %d\n", client_socket_fd, client_cnt);
+                    printf("Client %d connected. Number of clients connected = %d\n", client_fd_id[client_socket_fd], client_cnt);
                 }
                 else
                 {
@@ -120,7 +126,7 @@ int main()
                         close(fd);
                         client_cnt--;
                         print_time();
-                        printf("Client %d disconnected. Number of clients connected = %d\n", fd, client_cnt);
+                        printf("Client %d disconnected. Number of clients connected = %d\n", client_fd_id[fd], client_cnt);
                         continue;
                     }
 
