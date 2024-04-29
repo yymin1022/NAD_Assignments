@@ -15,6 +15,7 @@
 #define BUF_SIZE 1024
 #define SERVER_PORT 24094
 
+char    *get_response(int cmd, char *data, char *addr);
 int     exit_error(char *err_msg);
 void    print_time();
 
@@ -97,9 +98,10 @@ int main() {
                 else
                 {
                     char    client_req_val[BUF_SIZE];
-//                    char    server_res_val[BUF_SIZE];
+                    char    *server_res_val;
+                    int     client_req_cmd;
                     ssize_t client_req_len;
-//                    ssize_t server_res_len;
+                    ssize_t server_res_len;
 
                     client_req_len = read(fd, client_req_val, BUF_SIZE);
                     if (client_req_len == 0)
@@ -109,19 +111,40 @@ int main() {
                         print_time();
                         printf("Client %d disconnected. Number of clients connected = %d\n", fd, client_cnt);
                         client_cnt--;
+                        continue;
                     }
-                    else
-                    {
-                        write(1, "Client Message : ", 17);
-                        write(1, client_req_val, client_req_len);
-                        write(1, "\n", 1);
-                        write(fd, "Hello", 5);
-                    }
+
+                    client_req_cmd = client_req_val[0] - '0';
+                    server_res_val = get_response(client_req_cmd, client_req_val + 1, "");
+                    server_res_len = strlen(server_res_val);
+                    print_time();
+                    printf("TCP Connection Request from %s\n", "ADDR");
+                    printf("Command %d\n", client_req_cmd);
+                    write(fd, server_res_val, server_res_len);
                 }
             }
         }
     }
     return 0;
+}
+
+char    *get_response(int cmd, char *data, char *addr)
+{
+    (void)addr;
+    (void)data;
+    switch (cmd)
+    {
+        case 1:
+            return ("Option 1");
+        case 2:
+            return ("Option 2");
+        case 3:
+            return ("Option 3");
+        case 4:
+            return ("Option 4");
+        default:
+            return ("");
+    }
 }
 
 int exit_error(char *err_msg)
