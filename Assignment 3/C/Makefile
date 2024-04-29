@@ -5,28 +5,22 @@
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra
 
-TARGET_CLIENT = MyTCPClient
-TARGET_SERVER = MultiTCPServer
-SRC_CLIENT = MyTCPClient.c
-SRC_SERVER = MultiTCPServer.c
-OBJ_CLIENT = $(SRC_CLIENT:.c=.o)
-OBJ_SERVER = $(SRC_SERVER:.c=.o)
+TARGET = MultiTCPServer
+SRC = MultiTCPServer.c
+OBJ = $(SRC:.c=.o)
 
-all: $(TARGET_CLIENT) $(TARGET_SERVER)
+all: $(TARGET)
 
-$(TARGET_CLIENT): $(OBJ_CLIENT)
-	$(CC) $(CFLAGS) $(OBJ_CLIENT) -o $(TARGET_CLIENT)
-
-$(TARGET_SERVER): $(OBJ_SERVER)
-	$(CC) $(CFLAGS) $(OBJ_SERVER) -o $(TARGET_SERVER)
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o $(TARGET)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^
 
 clean:
 	rm -rf *.o
-	rm -rf $(TARGET_CLIENT) $(TARGET_SERVER)
+	rm -rf $(TARGET)
 
 re: clean all
 
-.PHONY: $(TARGET_CLIENT) $(TARGET_SERVER) clean re
+.PHONY: $(TARGET) clean re
