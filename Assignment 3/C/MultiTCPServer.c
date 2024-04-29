@@ -64,7 +64,7 @@ int main() {
         timeout_val.tv_usec = 500000;
 
         cur_time_data = time(NULL);
-        localtime_r(&cur_time_data, &cur_time);
+        gmtime_r(&cur_time_data, &cur_time);
         if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
         {
             print_time(&start_time_data);
@@ -126,7 +126,7 @@ void    print_time(time_t *start_time)
     struct tm   up_time;
 
     time_data = time(NULL) - *start_time;
-    localtime_r(&time_data, &up_time);
+    gmtime_r(&time_data, &up_time);
     printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
 }
 
