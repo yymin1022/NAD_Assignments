@@ -15,7 +15,8 @@
 #define BUF_SIZE 1024
 #define SERVER_PORT 24094
 
-int exit_error(char *err_msg);
+int     exit_error(char *err_msg);
+void    print_time(time_t *start_time);
 
 int main() {
     int                 client_cnt;
@@ -24,7 +25,7 @@ int main() {
     int                 server_option = 1;
     int                 server_socket_fd;
     fd_set              client_fds;
-    time_t              time_data;
+    time_t              start_time_data;
     struct tm           start_time;
     struct sockaddr_in  server_addr;
 
@@ -48,12 +49,13 @@ int main() {
     FD_SET(server_socket_fd, &client_fds);
     client_id = server_socket_fd;
 
-    time_data = time(NULL);
-    localtime_r(&time_data, &start_time);
+    start_time_data = time(NULL);
+    localtime_r(&start_time_data, &start_time);
     client_cnt = 0;
     while (1)
     {
         fd_set          tmp_fds;
+        time_t          cur_time_data;
         struct tm       cur_time;
         struct timeval  timeout_val;
 
@@ -61,10 +63,11 @@ int main() {
         timeout_val.tv_sec = 0;
         timeout_val.tv_usec = 500000;
 
-        time_data = time(NULL);
-        localtime_r(&time_data, &cur_time);
+        cur_time_data = time(NULL);
+        localtime_r(&cur_time_data, &cur_time);
         if ((cur_time.tm_sec - start_time.tm_sec) % 10 == 0)
         {
+            print_time(&start_time_data);
             printf("Number of clients connected = %d\n", client_cnt);
             usleep(500000);
         }
@@ -115,6 +118,16 @@ int main() {
         }
     }
     return 0;
+}
+
+void    print_time(time_t *start_time)
+{
+    time_t      time_data;
+    struct tm   up_time;
+
+    time_data = time(NULL) - *start_time;
+    localtime_r(&time_data, &up_time);
+    printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
 }
 
 int exit_error(char *err_msg)
