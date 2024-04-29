@@ -80,7 +80,7 @@ int main()
 
         cur_time_data = time(NULL);
         gmtime_r(&cur_time_data, &cur_time);
-        if ((cur_time.tm_sec - server_start_time.tm_sec) % 10 == 0)
+        if ((cur_time.tm_sec - server_start_time.tm_sec) % 10 == 0 && cur_time_data != server_start_time_data)
         {
             print_time();
             printf("Number of clients connected = %d\n", client_cnt);
@@ -211,9 +211,7 @@ char    *str_toupper(char *str)
 
 int exit_error(char *err_msg)
 {
-    write(2, "Error: ", 7);
-    write(2, err_msg, strlen(err_msg));
-    write(2, "\n", 1);
+    dprintf(2, "Error: %s\n", err_msg);
     exit(-1);
 }
 
