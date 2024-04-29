@@ -5,14 +5,13 @@
  **/
 
 #include <arpa/inet.h>
-#include <limits.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #define BUF_SIZE 1024
@@ -25,7 +24,7 @@ int     exit_error(char *err_msg);
 void    print_time();
 void    sigint_handler(int signal);
 
-int     client_fd_id[OPEN_MAX];
+int     client_fd_id[1024];
 int     server_response_cnt = 0;
 int     server_socket_fd;
 time_t  server_start_time_data;
