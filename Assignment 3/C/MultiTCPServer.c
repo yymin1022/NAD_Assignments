@@ -187,16 +187,14 @@ char    *get_response(int cmd, char *data, int fd)
 
 char    *get_client_ip_port(int fd)
 {
-    char                client_ip[30];
-    char                client_port[6];
+    char                res[30];
     socklen_t           addr_size;
     struct sockaddr_in  addr_info;
 
     addr_size = sizeof(struct sockaddr_in);
-    getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
-    strcpy(client_ip, inet_ntoa(addr_info.sin_addr));
-    sprintf(client_port, ":%d", addr_info.sin_port);
-    return (strdup(strcat(client_ip, client_port)));
+    getpeername(fd, (struct sockaddr *)&addr_info, &addr_size);
+    sprintf(res, "%s:%d", inet_ntoa(addr_info.sin_addr), ntohs(addr_info.sin_port));
+    return (strdup(res));
 }
 
 char    *str_toupper(char *str)
