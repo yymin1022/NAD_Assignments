@@ -30,13 +30,13 @@ int     server_response_cnt = 0;
 int     server_socket_fd;
 time_t  server_start_time_data;
 
-int main()
+int     main()
 {
     int                 client_cnt;
     int                 client_fd_max;
     int                 client_id;
     int                 server_binder;
-    int                 server_option = 1;
+    int                 server_option;
     int                 server_socket_fd_flag;
     fd_set              client_fds;
     struct sockaddr_in  server_addr;
@@ -47,6 +47,7 @@ int main()
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     server_socket_fd_flag = fcntl(server_socket_fd, F_GETFL, 0);
     fcntl(server_socket_fd, F_SETFL, server_socket_fd_flag | O_NONBLOCK);
+    server_option = 1;
     setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
 
     bzero(&server_addr, sizeof(server_addr));
@@ -184,7 +185,7 @@ char    *get_response(int cmd, char *data, int fd)
     }
 }
 
-char *get_client_ip_port(int fd)
+char    *get_client_ip_port(int fd)
 {
     char                client_ip[30];
     char                client_port[6];
@@ -212,7 +213,7 @@ char    *str_toupper(char *str)
     return (str);
 }
 
-int exit_error(char *err_msg)
+int     exit_error(char *err_msg)
 {
     dprintf(2, "Error: %s\n", err_msg);
     exit(-1);
