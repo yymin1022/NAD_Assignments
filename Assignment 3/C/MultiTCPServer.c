@@ -5,6 +5,7 @@
  **/
 
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
@@ -36,6 +37,7 @@ int main()
     int                 client_id;
     int                 server_binder;
     int                 server_option = 1;
+    int                 server_socket_fd_flag;
     fd_set              client_fds;
     struct sockaddr_in  server_addr;
     struct tm           server_start_time;
@@ -43,6 +45,8 @@ int main()
     signal(SIGINT, sigint_handler);
 
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket_fd_flag = fcntl(server_socket_fd, F_GETFL, 0);
+    fcntl(server_socket_fd, F_SETFL, server_socket_fd_flag | O_NONBLOCK);
     setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
 
     bzero(&server_addr, sizeof(server_addr));
