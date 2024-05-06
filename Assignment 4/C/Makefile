@@ -5,15 +5,14 @@
 CC = gcc
 CFLAGS = -Wall -Werror -Wextra
 
-TARGET = $(TARGET_C) $(TARGET_S)
 TARGET_C = ChatClient
 TARGET_S = ChatServer
-SRC_C = ChatClient.c ChatServer.c
+SRC_C = ChatClient.c
 SRC_S = ChatServer.c
 OBJ_C = $(SRC_C:.c=.o)
 OBJ_S = $(SRC_S:.c=.o)
 
-all: $(TARGET)
+all: $(TARGET_C) $(TARGET_S)
 
 $(TARGET_C): $(OBJ_C)
 	$(CC) $(CFLAGS) $(OBJ_C) -o $(TARGET_C)
@@ -26,7 +25,7 @@ $(TARGET_S): $(OBJ_S)
 
 clean:
 	rm -rf $(OBJ_C) $(OBJ_S)
-	rm -rf $(TARGET)
+	rm -rf $(TARGET_C) $(TARGET_S)
 
 re: clean all
 

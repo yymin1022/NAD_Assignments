@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 #define BUF_SIZE 1024
-#define SERVER_PORT 24094
+#define SERVER_PORT 14094
 
 char    *get_client_ip_port(int fd);
 char    *get_response(int cmd, char *data, int fd);
