@@ -29,4 +29,4 @@ clean:
 
 re: clean all
 
-.PHONY: $(TARGET) clean re test
+.PHONY: $(TARGET_C) $(TARGET_S) clean re test

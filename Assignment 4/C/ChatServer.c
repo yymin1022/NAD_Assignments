@@ -47,7 +47,7 @@ int     main()
     server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     server_socket_fd_flag = fcntl(server_socket_fd, F_GETFL, 0);
     fcntl(server_socket_fd, F_SETFL, server_socket_fd_flag | O_NONBLOCK);
-    server_option = 1;
+    server_option = 1;ㄷ
     setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
 
     bzero(&server_addr, sizeof(server_addr));
