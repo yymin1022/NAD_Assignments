@@ -7,12 +7,10 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 	"time"
 )
@@ -39,32 +37,17 @@ func main() {
 	exitFlag := false
 	for !exitFlag {
 		printMenu()
-		cmd := readCommand()
+		msg := readMessage()
 
-		text := ""
-		if cmd == 0 {
-			continue
-		} else if cmd == 5 {
+		if msg == "\\quit" {
 			break
-		} else if cmd == 1 {
-			fmt.Printf("Input lowercase sentence: ")
-			var err error
-			text, err = bufio.NewReader(os.Stdin).ReadString('\n')
-
-			if err != nil {
-				printError(err.Error())
-				continue
-			}
-
-			if len(text) >= 1024 {
-				printError("Text too long.")
-				continue
-			}
 		}
 
+		msg = checkCommand(msg)
+		print(msg)
 		timeRequest := time.Now().UnixMicro()
 
-		_, err := serverConnection.Write([]byte(fmt.Sprintf("%d%s", cmd, text)))
+		_, err := serverConnection.Write([]byte(msg))
 		if err != nil {
 			printError(err.Error())
 			continue
@@ -136,27 +119,28 @@ func printMenu() {
 	fmt.Println("5) Exit Client")
 }
 
-func readCommand() int {
+func readMessage() string {
 	var input string
 
-	fmt.Print("Input Command: ")
 	_, err := fmt.Scanln(&input)
 	if err != nil {
 		printError(err.Error())
 	}
 
-	cmd, err := strconv.ParseInt(input, 10, 0)
-	if err != nil {
-		printError("Invalid Command.")
-		return 0
-	}
+	return input
+}
 
-	if cmd < 1 || cmd > 5 {
-		printError("Invalid Command.")
-		return 0
+func checkCommand(message string) string {
+	if len(message) > 2 && message[0:3] == "\\ls" {
+		return "L"
+	} else if len(message) > 8 && message[0:9] == "\\secret " {
+		return "S" + message[8:len(message)-1]
+	} else if len(message) > 8 && message[0:9] == "\\except " {
+		return "E" + message[8:len(message)-1]
+	} else if len(message) > 4 && message[0:5] == "\\ping" {
+		return "P"
 	}
-
-	return int(cmd)
+	return "N" + message
 }
 
 func printError(msg string) {
