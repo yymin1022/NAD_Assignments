@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 )
 
 const SERVER_PORT = "14094"
@@ -92,7 +91,7 @@ func runCommand(cmd, extra string, conn net.Conn, nickname string) {
 	case "L":
 		listUsers(conn)
 	case "P":
-		sendPing(conn)
+		responsePing(conn)
 	case "Q":
 		conn.Close()
 	case "S":
@@ -110,12 +109,8 @@ func listUsers(conn net.Conn) {
 	}
 }
 
-func sendPing(conn net.Conn) {
-	startTime := time.Now()
+func responsePing(conn net.Conn) {
 	fmt.Fprintln(conn, "P")
-	endTime := time.Now()
-	pingTime := endTime.Sub(startTime)
-	fmt.Fprintf(conn, "RTT = %v\n", pingTime)
 }
 
 func handleSecret(details string, conn net.Conn, nickname string) {
