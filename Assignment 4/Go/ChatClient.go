@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
@@ -36,7 +37,6 @@ func main() {
 
 	exitFlag := false
 	for !exitFlag {
-		printMenu()
 		msg := readMessage()
 
 		if msg == "\\quit" {
@@ -44,7 +44,7 @@ func main() {
 		}
 
 		msg = checkCommand(msg)
-		print(msg)
+		println(msg)
 		timeRequest := time.Now().UnixMicro()
 
 		_, err := serverConnection.Write([]byte(msg))
@@ -109,36 +109,26 @@ func closeConnection(conn net.Conn) {
 	}
 }
 
-func printMenu() {
-	fmt.Println()
-	fmt.Println("< Select Menu. >")
-	fmt.Println("1) Convert Text to UPPER-case Letters")
-	fmt.Println("2) Get Server Uptime")
-	fmt.Println("3) Get Client IP / Port")
-	fmt.Println("4) Get Count of Requests Server Got")
-	fmt.Println("5) Exit Client")
-}
-
 func readMessage() string {
 	var input string
 
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		printError(err.Error())
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		input = scanner.Text()
 	}
 
 	return input
 }
 
 func checkCommand(message string) string {
-	if len(message) > 2 && message[0:3] == "\\ls" {
+	if message == "\\ls" {
 		return "L"
-	} else if len(message) > 8 && message[0:9] == "\\secret " {
-		return "S" + message[8:len(message)-1]
-	} else if len(message) > 8 && message[0:9] == "\\except " {
-		return "E" + message[8:len(message)-1]
-	} else if len(message) > 4 && message[0:5] == "\\ping" {
+	} else if message == "\\ping" {
 		return "P"
+	} else if len(message) > 8 && message[0:8] == "\\secret " {
+		return "S" + message[8:]
+	} else if len(message) > 8 && message[0:8] == "\\except " {
+		return "E" + message[8:]
 	}
 	return "N" + message
 }
