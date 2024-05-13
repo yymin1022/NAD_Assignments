@@ -59,15 +59,15 @@ func main() {
 				PING_MODE = true
 				PING_START_TIME = time.Now()
 				fmt.Fprintf(serverConnection, "P ping\n")
+			} else if cmd == "Q" {
+				closeConnection(serverConnection)
+				os.Exit(0)
 			} else if cmd != "" {
 				fmt.Fprintf(serverConnection, "%s %s\n", cmd, extra)
 			} else {
 				fmt.Println("Invalid Command.")
 			}
-			if cmd == "Q" {
-				closeConnection(serverConnection)
-				os.Exit(0)
-			}
+
 		} else {
 			fmt.Fprintln(serverConnection, "M"+message)
 		}
@@ -90,7 +90,7 @@ func makeConnection() net.Conn {
 func closeConnection(conn net.Conn) {
 	fmt.Println("\rClosing Client Program...\nBye bye~")
 	if conn != nil {
-		_, err := conn.Write([]byte(string(rune(5))))
+		_, err := conn.Write([]byte("Q"))
 		if err != nil {
 			printError(err.Error())
 		}
