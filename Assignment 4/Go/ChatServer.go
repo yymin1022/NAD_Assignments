@@ -10,7 +10,10 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 const SERVER_PORT = "14094"
@@ -19,15 +22,22 @@ const MAX_CLIENT = 8
 var clients = make(map[string]net.Conn)
 
 func main() {
-	listener, err := net.Listen("tcp4", ":"+SERVER_PORT)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
+	serverListener := initServer()
+	if serverListener == nil {
+		printError("Failed to Init Server")
 		return
 	}
-	fmt.Println("Server is running on port", SERVER_PORT)
+
+	sigintHandler := make(chan os.Signal, 1)
+	signal.Notify(sigintHandler, syscall.SIGINT)
+	go func() {
+		<-sigintHandler
+		closeServer(serverListener)
+		os.Exit(0)
+	}()
 
 	for {
-		conn, err := listener.Accept()
+		conn, err := serverListener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting connection:", err)
 			continue
@@ -39,6 +49,25 @@ func main() {
 		}
 
 		go handleClient(conn)
+	}
+}
+
+func initServer() net.Listener {
+	serverListener, err := net.Listen("tcp4", ":"+SERVER_PORT)
+	if err != nil {
+		printError(err.Error())
+		return nil
+	}
+
+	fmt.Printf("Server is ready to receive on port %s\n", SERVER_PORT)
+
+	return serverListener
+}
+
+func closeServer(listener net.Listener) {
+	fmt.Println("\rClosing Server Program...\nBye bye~")
+	if listener != nil {
+		_ = listener.Close()
 	}
 }
 
@@ -64,7 +93,7 @@ func handleClient(conn net.Conn) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		if strings.HasPrefix(text, "M") {
-			broadcast(fmt.Sprintf("M%s: %s", nickname, text[1:]), nickname)
+			broadcast(fmt.Sprintf("M%s> %s", nickname, text[1:]), nickname)
 
 			if strings.Contains(strings.ToLower(text), "i hate professor") {
 				fmt.Fprintf(conn, "KBanned Keyword.\n")
@@ -151,5 +180,13 @@ func broadcast(message, skip string) {
 		if nick != skip {
 			fmt.Fprintln(conn, message)
 		}
+	}
+}
+
+func printError(msg string) {
+	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+	if err != nil {
+		fmt.Printf("Error: %s\n", msg)
+		return
 	}
 }
