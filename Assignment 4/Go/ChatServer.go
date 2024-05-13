@@ -91,7 +91,7 @@ func runCommand(cmd, extra string, conn net.Conn, nickname string) {
 	case "L":
 		listUsers(conn)
 	case "P":
-		responsePing(conn)
+		fmt.Fprintf(conn, "P\n")
 	case "Q":
 		conn.Close()
 	case "S":
@@ -107,10 +107,6 @@ func listUsers(conn net.Conn) {
 	for nick, clientConn := range clients {
 		fmt.Fprintf(conn, "I%s - %s\n", nick, clientConn.RemoteAddr().String())
 	}
-}
-
-func responsePing(conn net.Conn) {
-	fmt.Fprintln(conn, "P")
 }
 
 func handleSecret(details string, conn net.Conn, nickname string) {
