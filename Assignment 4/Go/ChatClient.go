@@ -1,8 +1,8 @@
-/**
+/*
  * ChatClient.go
- * ID : 20194094
- * Name : Yongmin Yoo
- **/
+ * 20194094
+ * Yongmin Yoo
+ */
 
 package main
 
@@ -12,19 +12,25 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
-	"time"
 )
 
 const SERVER_NAME = "localhost"
 const SERVER_PORT = "14094"
 
 func main() {
-	serverConnection := makeConnection()
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: go run ChatClient.go <nickname>")
+		os.Exit(1)
+	}
 
+	clientNickname := os.Args[1]
+
+	serverConnection := makeConnection()
 	if serverConnection == nil {
 		printError("Failed to connect server.")
-		return
+		os.Exit(1)
 	}
 
 	sigintHandler := make(chan os.Signal, 1)
@@ -35,58 +41,33 @@ func main() {
 		os.Exit(0)
 	}()
 
-	exitFlag := false
-	for !exitFlag {
-		msg := readMessage()
+	defer closeConnection(serverConnection)
 
-		if msg == "\\quit" {
-			break
-		}
+	fmt.Fprintln(serverConnection, clientNickname)
+	go readMessages(serverConnection)
 
-		msg = checkCommand(msg)
-		println(msg)
-		timeRequest := time.Now().UnixMicro()
-
-		_, err := serverConnection.Write([]byte(msg))
-		if err != nil {
-			printError(err.Error())
-			continue
-		}
-
-		responseBuffer := make([]byte, 1024)
-		serverTimer := time.NewTimer(time.Second * 5)
-		go func() {
-			<-serverTimer.C
-			exitFlag = true
-			printError("Server Timeout.")
-			closeConnection(serverConnection)
-			os.Exit(0)
-		}()
-
-		_, err = serverConnection.Read(responseBuffer)
-
-		if !exitFlag {
-			if err != nil {
-				printError(err.Error())
-				serverTimer.Stop()
-				continue
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		message := scanner.Text()
+		if strings.HasPrefix(message, "\\") {
+			cmd, extra := encodeCommand(message)
+			if cmd != "" {
+				fmt.Fprintf(serverConnection, "%s %s\n", cmd, extra)
+			} else {
+				fmt.Println("Invalid Command.")
 			}
-			serverTimer.Stop()
-			timeResponse := time.Now().UnixMicro()
-
-			fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
-			fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
+			if cmd == "Q" {
+				closeConnection(serverConnection)
+				os.Exit(0)
+			}
+		} else {
+			fmt.Fprintln(serverConnection, "M"+message)
 		}
-	}
-
-	if !exitFlag {
-		closeConnection(serverConnection)
 	}
 }
 
 func makeConnection() net.Conn {
 	conn, err := net.Dial("tcp4", SERVER_NAME+":"+SERVER_PORT)
-
 	if err != nil {
 		printError(err.Error())
 		return nil
@@ -109,28 +90,34 @@ func closeConnection(conn net.Conn) {
 	}
 }
 
-func readMessage() string {
-	var input string
+func readMessages(conn net.Conn) {
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		readData := scanner.Text()
+		fmt.Println(readData[1:])
 
-	scanner := bufio.NewScanner(os.Stdin)
-	if scanner.Scan() {
-		input = scanner.Text()
+		if readData[0] == 'K' {
+			closeConnection(conn)
+			os.Exit(0)
+		}
 	}
-
-	return input
 }
 
-func checkCommand(message string) string {
-	if message == "\\ls" {
-		return "L"
-	} else if message == "\\ping" {
-		return "P"
-	} else if len(message) > 8 && message[0:8] == "\\secret " {
-		return "S" + message[8:]
-	} else if len(message) > 8 && message[0:8] == "\\except " {
-		return "E" + message[8:]
+func encodeCommand(command string) (string, string) {
+	parts := strings.SplitN(command, " ", 2)
+	switch parts[0] {
+	case "\\ls":
+		return "L", ""
+	case "\\ping":
+		return "P", ""
+	case "\\quit":
+		return "Q", ""
+	case "\\secret", "\\except":
+		if len(parts) > 1 {
+			return strings.ToUpper(string(parts[0][1])), parts[1]
+		}
 	}
-	return "N" + message
+	return "", ""
 }
 
 func printError(msg string) {
