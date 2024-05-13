@@ -129,7 +129,9 @@ func encodeCommand(command string) (string, string) {
 		return "Q", ""
 	case "\\secret", "\\except":
 		if len(parts) > 1 {
-			return strings.ToUpper(string(parts[0][1])), parts[1]
+			if strings.Contains(parts[1], " ") {
+				return strings.ToUpper(string(parts[0][1])), parts[1]
+			}
 		}
 	}
 	return "", ""
