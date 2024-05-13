@@ -65,11 +65,21 @@ func handleClient(conn net.Conn) {
 		text := scanner.Text()
 		if strings.HasPrefix(text, "M") {
 			broadcast(fmt.Sprintf("M%s: %s", nickname, text[1:]), nickname)
+
+			if strings.Contains(strings.ToLower(text), "i hate professor") {
+				fmt.Fprintf(conn, "KBanned Keyword.\n")
+
+				delete(clients, nickname)
+				broadcast(fmt.Sprintf("M[%s is disconnected. There are %d users in the room.]\n", nickname, len(clients)), nickname)
+				fmt.Printf("[%s is disconnected. There are %d users in the room.]\n", nickname, len(clients))
+				conn.Close()
+				return
+			}
 		} else {
 			if command, extra := decodeCommand(text); command != "" {
 				runCommand(command, extra, conn, nickname)
 			} else if text != "Q" {
-				fmt.Fprintf(conn, "KInvalid command.\n")
+				fmt.Fprintf(conn, "MInvalid command.\n")
 				fmt.Printf("Invalid command: %s\n", text)
 			}
 		}
