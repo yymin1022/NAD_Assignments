@@ -1,148 +1,143 @@
-/**
+/*
  * ChatServer.go
- * ID : 20194094
- * Name : Yongmin Yoo
- **/
+ * 20194094
+ * Yongmin Yoo
+ */
 
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
-const TCP_SERVER_PORT = "14094"
+const SERVER_PORT = "14094"
+const MAX_CLIENT = 8
 
-var serverResponseCnt int
-var serverStartTime time.Time
+var clients = make(map[string]net.Conn)
 
 func main() {
-	serverListener := initServer()
-	if serverListener == nil {
-		printError("Failed to Init Server")
+	listener, err := net.Listen("tcp4", ":"+SERVER_PORT)
+	if err != nil {
+		fmt.Println("Error starting server:", err)
 		return
 	}
-
-	sigintHandler := make(chan os.Signal, 1)
-	signal.Notify(sigintHandler, syscall.SIGINT)
-	go func() {
-		<-sigintHandler
-		closeServer(serverListener)
-		os.Exit(0)
-	}()
-
-	clientCnt := 0
-	clientID := 0
-	go func() {
-		for {
-			serverTimer := time.NewTimer(time.Second * 10)
-			<-serverTimer.C
-			printLog(fmt.Sprintf("Number of clients connected = %d", clientCnt))
-		}
-	}()
-
-	serverResponseCnt = 0
-	serverStartTime = time.Now()
+	fmt.Println("Server is running on port", SERVER_PORT)
 
 	for {
-		serverConnection, _ := serverListener.Accept()
-		go func() {
-			clientCnt++
-			clientID++
-			curClientID := clientID
-			printLog(fmt.Sprintf("Client %d connected. Number of clients connected = %d", curClientID, clientCnt))
-			for serverConnection != nil {
-				requestAddr := serverConnection.RemoteAddr()
-				if requestAddr != nil {
-					requestBuffer := make([]byte, 1024)
-					count, _ := serverConnection.Read(requestBuffer)
-					cmd, _ := strconv.Atoi(string(requestBuffer[0]))
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err)
+			continue
+		}
 
-					if count == 0 {
-						_ = serverConnection.Close()
-						break
-					}
-
-					responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
-					if responseData == "" {
-						_ = serverConnection.Close()
-						break
-					}
-
-					printLog(fmt.Sprintf("TCP Connection Request from %s", requestAddr.String()))
-					printLog(fmt.Sprintf("Command %d", cmd))
-					_, err := serverConnection.Write([]byte(responseData))
-					if err != nil {
-						printError("Failed to Send Response")
-						continue
-					}
-					serverResponseCnt++
-				}
-			}
-			clientCnt--
-			printLog(fmt.Sprintf("Client %d disconnected. Number of clients connected = %d", curClientID, clientCnt))
-		}()
+		go handleClient(conn)
 	}
 }
 
-func initServer() net.Listener {
-	serverListener, err := net.Listen("tcp4", ":"+TCP_SERVER_PORT)
-	if err != nil {
-		printError(err.Error())
-		return nil
-	}
+func handleClient(conn net.Conn) {
+	reader := bufio.NewReader(conn)
+	nickname, _ := reader.ReadString('\n')
+	nickname = strings.TrimSpace(nickname)
 
-	fmt.Printf("Server is ready to receive on port %s\n", TCP_SERVER_PORT)
-
-	return serverListener
-}
-
-func closeServer(listener net.Listener) {
-	fmt.Println("\rClosing Server Program...\nBye bye~")
-	if listener != nil {
-		_ = listener.Close()
-	}
-}
-
-func getResponse(cmd int, data string, addr string) string {
-	switch cmd {
-	case 1:
-		return strings.TrimSpace(strings.ToUpper(data))
-	case 2:
-		curTime := time.Now()
-		upTime := int(curTime.Sub(serverStartTime).Seconds())
-		upTimeH := upTime / 3600
-		upTime %= 3600
-		upTimeM := upTime / 60
-		upTime %= 60
-		return fmt.Sprintf("run time = %02d:%02d:%02d", upTimeH, upTimeM, upTime)
-	case 3:
-		addrInfo := strings.Split(addr, ":")
-		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
-	case 4:
-		return fmt.Sprintf("requests served = %d", serverResponseCnt)
-	}
-	return ""
-}
-
-func printLog(msg string) {
-	curTime := time.Now()
-	curTimeH := curTime.Hour()
-	curTimeM := curTime.Minute()
-	curTimeS := curTime.Second()
-	fmt.Printf("[Time: %02d:%02d:%02d] %s\n", curTimeH, curTimeM, curTimeS, msg)
-}
-
-func printError(msg string) {
-	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
-	if err != nil {
-		fmt.Printf("Error: %s\n", msg)
+	if _, exists := clients[nickname]; exists {
+		fmt.Fprintln(conn, "KNickname already used by another user. cannot connect")
+		conn.Close()
 		return
+	}
+
+	clients[nickname] = conn
+	broadcast(fmt.Sprintf("MWelcome %s to the chat.", nickname), nickname)
+
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if strings.HasPrefix(text, "M") {
+			broadcast(fmt.Sprintf("M%s: %s", nickname, text[1:]), nickname)
+		} else {
+			if command, extra := decodeCommand(text); command != "" {
+				processCommand(command, extra, conn, nickname)
+			} else {
+				fmt.Fprintf(conn, "KInvalid command.\n")
+			}
+		}
+	}
+
+	delete(clients, nickname)
+	broadcast(fmt.Sprintf("M%s has left the chat.", nickname), nickname)
+	conn.Close()
+}
+
+func decodeCommand(text string) (string, string) {
+	parts := strings.SplitN(text, " ", 2)
+	if len(parts) > 1 {
+		return parts[0], parts[1]
+	}
+	return "", ""
+}
+
+func processCommand(cmd, extra string, conn net.Conn, nickname string) {
+	switch cmd {
+	case "L":
+		listUsers(conn)
+	case "P":
+		sendPing(conn)
+	case "Q":
+		conn.Close()
+	case "S":
+		handleSecret(extra, conn, nickname)
+	case "E":
+		handleExcept(extra, conn, nickname)
+	default:
+		fmt.Fprintf(conn, "MInvalid command received: %s\n", cmd)
+	}
+}
+
+func listUsers(conn net.Conn) {
+	for nick, clientConn := range clients {
+		fmt.Fprintf(conn, "I%s - %s\n", nick, clientConn.RemoteAddr().String())
+	}
+}
+
+func sendPing(conn net.Conn) {
+	startTime := time.Now()
+	fmt.Fprintln(conn, "Mpong")
+	endTime := time.Now()
+	pingTime := endTime.Sub(startTime)
+	fmt.Fprintf(conn, "RTT = %v\n", pingTime)
+}
+
+func handleSecret(details string, conn net.Conn, nickname string) {
+	parts := strings.SplitN(details, " ", 2)
+	if len(parts) < 2 {
+		return
+	}
+	target, message := parts[0], parts[1]
+	if targetConn, ok := clients[target]; ok {
+		fmt.Fprintln(targetConn, fmt.Sprintf("MSecret message from %s: %s", nickname, message))
+	}
+}
+
+func handleExcept(details string, conn net.Conn, nickname string) {
+	parts := strings.SplitN(details, " ", 2)
+	if len(parts) < 2 {
+		return
+	}
+	except, message := parts[0], parts[1]
+	for nick, clientConn := range clients {
+		if nick != except && conn != clientConn {
+			fmt.Fprintln(clientConn, fmt.Sprintf("MMessage from %s: %s", nickname, message))
+		}
+	}
+}
+
+func broadcast(message, skip string) {
+	for nick, conn := range clients {
+		if nick != skip {
+			fmt.Fprintln(conn, message)
+		}
 	}
 }
