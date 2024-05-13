@@ -34,6 +34,11 @@ func main() {
 			continue
 		}
 
+		if len(clients) == MAX_CLIENT {
+			fmt.Fprintln(conn, "KChatting Room is Full. Cannot connect")
+			conn.Close()
+		}
+
 		go handleClient(conn)
 	}
 }
@@ -44,10 +49,13 @@ func handleClient(conn net.Conn) {
 	nickname = strings.TrimSpace(nickname)
 
 	if _, exists := clients[nickname]; exists {
-		fmt.Fprintln(conn, "KNickname already used by another user. cannot connect")
+		fmt.Fprintln(conn, "KNickname is already used by another user. Cannot connect")
 		conn.Close()
 		return
 	}
+
+	fmt.Fprintf(conn, "M[Welcome %s to CAU Net-Class Chat Room at %s.]\n", nickname, conn.LocalAddr().String())
+	fmt.Fprintf(conn, "M[There are %d users in the room]\n", len(clients))
 
 	clients[nickname] = conn
 	broadcast(fmt.Sprintf("MWelcome %s to the chat.", nickname), nickname)
@@ -59,7 +67,7 @@ func handleClient(conn net.Conn) {
 			broadcast(fmt.Sprintf("M%s: %s", nickname, text[1:]), nickname)
 		} else {
 			if command, extra := decodeCommand(text); command != "" {
-				processCommand(command, extra, conn, nickname)
+				runCommand(command, extra, conn, nickname)
 			} else {
 				fmt.Fprintf(conn, "KInvalid command.\n")
 			}
@@ -79,7 +87,7 @@ func decodeCommand(text string) (string, string) {
 	return "", ""
 }
 
-func processCommand(cmd, extra string, conn net.Conn, nickname string) {
+func runCommand(cmd, extra string, conn net.Conn, nickname string) {
 	switch cmd {
 	case "L":
 		listUsers(conn)
@@ -104,7 +112,7 @@ func listUsers(conn net.Conn) {
 
 func sendPing(conn net.Conn) {
 	startTime := time.Now()
-	fmt.Fprintln(conn, "Mpong")
+	fmt.Fprintln(conn, "P")
 	endTime := time.Now()
 	pingTime := endTime.Sub(startTime)
 	fmt.Fprintf(conn, "RTT = %v\n", pingTime)
