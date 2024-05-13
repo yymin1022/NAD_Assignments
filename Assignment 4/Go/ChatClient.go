@@ -14,10 +14,14 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 const SERVER_NAME = "localhost"
 const SERVER_PORT = "14094"
+
+var PING_MODE = false
+var PING_START_TIME = time.Now()
 
 func main() {
 	if len(os.Args) < 2 {
@@ -51,7 +55,11 @@ func main() {
 		message := scanner.Text()
 		if strings.HasPrefix(message, "\\") {
 			cmd, extra := encodeCommand(message)
-			if cmd != "" {
+			if cmd == "P" {
+				PING_MODE = true
+				PING_START_TIME = time.Now()
+				fmt.Fprintf(serverConnection, "P ping\n")
+			} else if cmd != "" {
 				fmt.Fprintf(serverConnection, "%s %s\n", cmd, extra)
 			} else {
 				fmt.Println("Invalid Command.")
@@ -94,7 +102,14 @@ func readMessages(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		readData := scanner.Text()
-		fmt.Println(readData[1:])
+		if PING_MODE == true {
+			PING_MODE = false
+			PING_END_TIME := time.Now()
+			rttValue := PING_END_TIME.Sub(PING_START_TIME).Nanoseconds() / 1000
+			fmt.Printf("RTT is %vms\n", rttValue)
+		} else {
+			fmt.Println(readData[1:])
+		}
 
 		if readData[0] == 'K' {
 			closeConnection(conn)
