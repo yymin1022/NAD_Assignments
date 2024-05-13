@@ -69,6 +69,7 @@ func handleClient(conn net.Conn) {
 				runCommand(command, extra, conn, nickname)
 			} else {
 				fmt.Fprintf(conn, "KInvalid command.\n")
+				fmt.Printf("Invalid command: %s\n", text)
 			}
 		}
 	}
