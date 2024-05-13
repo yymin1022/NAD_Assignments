@@ -58,6 +58,7 @@ func handleClient(conn net.Conn) {
 
 	clients[nickname] = conn
 	broadcast(fmt.Sprintf("MWelcome %s to the chat.", nickname), nickname)
+	fmt.Printf("%s Joined from %s. There are %d users in the room.\n", nickname, conn.RemoteAddr().String(), len(clients))
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
@@ -67,7 +68,7 @@ func handleClient(conn net.Conn) {
 		} else {
 			if command, extra := decodeCommand(text); command != "" {
 				runCommand(command, extra, conn, nickname)
-			} else {
+			} else if text != "Q" {
 				fmt.Fprintf(conn, "KInvalid command.\n")
 				fmt.Printf("Invalid command: %s\n", text)
 			}
@@ -76,6 +77,7 @@ func handleClient(conn net.Conn) {
 
 	delete(clients, nickname)
 	broadcast(fmt.Sprintf("M%s has left the chat.", nickname), nickname)
+	fmt.Printf("%s left the room. There are %d users in the room.\n", nickname, len(clients))
 	conn.Close()
 }
 
@@ -117,7 +119,7 @@ func handleSecret(details string, conn net.Conn, nickname string) {
 	}
 	target, message := parts[0], parts[1]
 	if targetConn, ok := clients[target]; ok {
-		fmt.Fprintln(targetConn, fmt.Sprintf("MSecret message from %s: %s", nickname, message))
+		fmt.Fprintln(targetConn, fmt.Sprintf("Mfrom: %s> %s", nickname, message))
 	}
 }
 
@@ -129,7 +131,7 @@ func handleExcept(details string, conn net.Conn, nickname string) {
 	except, message := parts[0], parts[1]
 	for nick, clientConn := range clients {
 		if nick != except && conn != clientConn {
-			fmt.Fprintln(clientConn, fmt.Sprintf("MMessage from %s: %s", nickname, message))
+			fmt.Fprintln(clientConn, fmt.Sprintf("Mfrom %s> %s", nickname, message))
 		}
 	}
 }
