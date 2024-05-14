@@ -45,7 +45,6 @@ fd_set      current_sockets;
 
 int main()
 {
-
     int server_fd;
 
     server_fd = setup_server();
@@ -241,9 +240,7 @@ void    handle_client_message(int client_fd)
         for (int i = 0; i < client_count; i++)
         {
             if (clients[i].fd == client_fd)
-            {
                 exclude_nick(client_command_message, client_command_target, clients[i].nickname);
-            }
         }
     }
     else
