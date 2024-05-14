@@ -179,6 +179,7 @@ void    handle_new_connection(int server_fd)
 void    handle_client_message(int client_fd)
 {
     char    client_msg[BUF_SIZE];
+    char    client_msg_copy[BUF_SIZE];
     char    *client_command;
     char    *client_command_extra;
     char    *client_command_message;
@@ -198,7 +199,8 @@ void    handle_client_message(int client_fd)
     client_msg[client_msg_size] = '\0';
     trim_newline(client_msg);
 
-    client_command = strtok(client_msg, " ");
+    strcpy(client_msg_copy, client_msg);
+    client_command = strtok(client_msg_copy, " ");
     client_command_extra = strtok(NULL, "");
     if (strcmp(client_command, "L") == 0)
     {
@@ -239,7 +241,6 @@ void    handle_client_message(int client_fd)
                 exclude_nick(client_command_message, client_command_target, clients[i].nickname);
             }
         }
-
     }
     else
         broadcast_message(client_msg, client_fd);
@@ -322,7 +323,8 @@ void    remove_client(int client_fd)
 char    *trim_newline(char *str)
 {
     char *pos;
-    if ((pos = strchr(str, '\n')) != NULL) *pos = '\0';
+    if ((pos = strchr(str, '\n')) != NULL)
+        *pos = '\0';
     return str;
 }
 
