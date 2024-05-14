@@ -19,10 +19,12 @@
 #define NICK_SIZE 32
 #define SERVER_PORT 14094
 
+int     check_message_avail(char *message);
 int     check_nick_avail(char *new_nick);
 int     find_client_index(int fd);
 int     setup_server();
 char    *get_ip_port(int fd, int is_client);
+char    *str_toupper(char *str);
 char    *trim_newline(char *str);
 void    broadcast_message(const char *message, int sender_fd);
 void    close_server(int sig);
@@ -200,12 +202,20 @@ void    handle_client_message(int client_fd)
     int     client_msg_size;
 
     client_msg_size = read(client_fd, client_msg, BUF_SIZE);
-
     if (client_msg_size <= 0)
     {
+        char client_nick[NICK_SIZE];
+        char send_buf[BUF_SIZE];
         char *message = "KSocket Error\n";
+
         send(client_fd, message, strlen(message), 0);
+        strcpy(client_nick, clients[find_client_index(client_fd)].nickname);
         remove_client(client_fd);
+
+        snprintf(send_buf, sizeof(send_buf), "M%s has left the chat.", client_nick);
+        broadcast_message(send_buf, client_fd);
+        printf("%s left the room. There are %d users in the room.\n", client_nick, client_count);
+
         return;
     }
 
@@ -230,7 +240,17 @@ void    handle_client_message(int client_fd)
     else if (strcmp(client_command, "P") == 0)
         send(client_fd, "P\n", 2, 0);
     else if (strcmp(client_command, "Q") == 0)
+    {
+        char client_nick[NICK_SIZE];
+        char send_buf[BUF_SIZE];
+
+        strcpy(client_nick, clients[find_client_index(client_fd)].nickname);
         remove_client(client_fd);
+
+        snprintf(send_buf, sizeof(send_buf), "M%s has left the chat.", client_nick);
+        broadcast_message(send_buf, client_fd);
+        printf("%s left the room. There are %d users in the room.\n", client_nick, client_count);
+    }
     else if (strcmp(client_command, "S") == 0 && client_command_extra != NULL)
     {
         client_command_target = strtok(client_command_extra, " ");
@@ -255,7 +275,24 @@ void    handle_client_message(int client_fd)
         }
     }
     else
-        broadcast_message(client_msg, client_fd);
+    {
+        if (check_message_avail(client_msg) == 0)
+        {
+            char client_nick[NICK_SIZE];
+            char send_buf[BUF_SIZE];
+
+            strcpy(client_nick, clients[find_client_index(client_fd)].nickname);
+            sprintf(send_buf, "KBanned Keyword.\n");
+            send(client_fd, send_buf, strlen(send_buf), 0);
+            remove_client(client_fd);
+
+            sprintf(send_buf, "M[%s is disconnected. There are %d users in the room.]", client_nick, client_count);
+            printf("[%s is disconnected. There are %d users in the room.]\n", client_nick, client_count);
+            broadcast_message(send_buf, client_fd);
+        }
+        else
+            broadcast_message(client_msg, client_fd);
+    }
 }
 
 void    broadcast_message(const char *message, int sender_fd)
@@ -268,6 +305,13 @@ void    broadcast_message(const char *message, int sender_fd)
         if (clients[i].fd != sender_fd)
             send(clients[i].fd, send_buf, strlen(send_buf), 0);
     }
+}
+
+int check_message_avail(char *message)
+{
+    if (strstr(str_toupper(message), "I HATE PROFESSOR") != 0)
+        return 0;
+    return 1;
 }
 
 int check_nick_avail(char *new_nick)
@@ -321,8 +365,6 @@ void    exclude_nick(const char *message, const char *exclude_nick, const char *
 
 void    remove_client(int client_fd)
 {
-    char send_buf[BUF_SIZE];
-
     for (int i = 0; i < client_count; i++)
     {
         if (clients[i].fd == client_fd)
@@ -330,10 +372,6 @@ void    remove_client(int client_fd)
             for (int j = i; j < client_count - 1; j++)
                 clients[j] = clients[j + 1];
             client_count--;
-
-            snprintf(send_buf, sizeof(send_buf), "M%s has left the chat.", clients[i].nickname);
-            broadcast_message(send_buf, client_fd);
-            printf("%s left the room. There are %d users in the room.\n", clients[i].nickname, client_count);
 
             close(client_fd);
             FD_CLR(client_fd, &current_sockets);
@@ -355,6 +393,20 @@ char    *get_ip_port(int fd, int is_client)
         getsockname(fd, (struct sockaddr *)&addr_info, &addr_size);
     sprintf(res, "%s:%d", inet_ntoa(addr_info.sin_addr), ntohs(addr_info.sin_port));
     return (strdup(res));
+}
+
+char    *str_toupper(char *str)
+{
+    size_t  i;
+
+    i = 0;
+    while(str[i])
+    {
+        if (str[i] >= 'a' && str[i] <= 'z')
+            str[i] = str[i] - 'a' + 'A';
+        i++;
+    }
+    return (str);
 }
 
 char    *trim_newline(char *str)
