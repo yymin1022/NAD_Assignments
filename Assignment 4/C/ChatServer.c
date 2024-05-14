@@ -276,7 +276,8 @@ void    handle_client_message(int client_fd)
     }
     else
     {
-        if (check_message_avail(client_msg) == 0)
+        strcpy(client_msg_copy, client_msg);
+        if (check_message_avail(client_msg_copy) == 0)
         {
             char client_nick[NICK_SIZE];
             char send_buf[BUF_SIZE];
