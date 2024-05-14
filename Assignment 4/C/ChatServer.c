@@ -20,12 +20,13 @@
 #define NICK_SIZE 32
 
 typedef struct {
-    int fd;
-    char nickname[NICK_SIZE];
+    int         fd;
+    char        nickname[NICK_SIZE];
 } client_t;
 
 int     find_client_index(int fd);
 int     setup_server();
+char    *get_client_ip_port(int fd);
 char    *trim_newline(char *str);
 void    broadcast_message(const char *message, int sender_fd);
 void    close_server(int sig);
@@ -167,13 +168,15 @@ void    handle_new_connection(int server_fd)
     if (client_fd > client_fd_max)
         client_fd_max = client_fd;
 
+    char *client_ip_port = get_client_ip_port(client_fd);
     sprintf(client_welcome_msg, "M[Welcome %s to CAU Net-Class Chat Room at %s.]\n", client_nick, "SERVER_IP");
     send(client_fd, client_welcome_msg, strlen(client_welcome_msg), 0);
     sprintf(client_welcome_msg, "M[There are %d users in the room]\n", client_count);
     send(client_fd, client_welcome_msg, strlen(client_welcome_msg), 0);
 
     client_count++;
-    printf("%s Joined from %s. There are %d users in the room.\n", client_nick, inet_ntoa(client_addr.sin_addr), client_count);
+    printf("%s Joined from %s. There are %d users in the room.\n", client_nick, client_ip_port, client_count);
+    free(client_ip_port);
 }
 
 void    handle_client_message(int client_fd)
@@ -207,8 +210,11 @@ void    handle_client_message(int client_fd)
         for (int i = 0; i < client_count; i++)
         {
             char line[BUF_SIZE];
-            snprintf(line, sizeof(line), "I%s - %s\n", clients[i].nickname, "CLIENT_IP");
+            char *client_ip_port = get_client_ip_port(clients[i].fd);
+
+            snprintf(line, sizeof(line), "I%s - %s\n", clients[i].nickname, client_ip_port);
             send(client_fd, line, strlen(line), 0);
+            free(client_ip_port);
         }
     }
     else if (strcmp(client_command, "P") == 0)
@@ -318,6 +324,18 @@ void    remove_client(int client_fd)
             break;
         }
     }
+}
+
+char    *get_client_ip_port(int fd)
+{
+    char                res[30];
+    socklen_t           addr_size;
+    struct sockaddr_in  addr_info;
+
+    addr_size = sizeof(struct sockaddr_in);
+    getpeername(fd, (struct sockaddr *)&addr_info, &addr_size);
+    sprintf(res, "%s:%d", inet_ntoa(addr_info.sin_addr), ntohs(addr_info.sin_port));
+    return (strdup(res));
 }
 
 char    *trim_newline(char *str)
