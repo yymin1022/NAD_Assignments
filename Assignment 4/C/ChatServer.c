@@ -15,9 +15,9 @@
 #include <unistd.h>
 
 #define BUF_SIZE 1024
-#define SERVER_PORT 14094
 #define MAX_CLIENT 8
 #define NICK_SIZE 32
+#define SERVER_PORT 14094
 
 int     find_client_index(int fd);
 int     setup_server();
