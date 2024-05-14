@@ -229,9 +229,7 @@ void    handle_client_message(int client_fd)
         for (int i = 0; i < client_count; i++)
         {
             if (clients[i].fd == client_fd)
-            {
                 send_to_nick(client_command_message, client_command_target, clients[i].nickname);
-            }
         }
 
     }
