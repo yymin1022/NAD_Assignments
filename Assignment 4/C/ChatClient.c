@@ -90,8 +90,14 @@ int main(int argc, char *argv[])
                 long rtt_value = ((PING_END_TIME.tv_sec - PING_START_TIME.tv_sec) * 1000 + (PING_END_TIME.tv_nsec - PING_START_TIME.tv_nsec)) / 1000;
                 printf("RTT is %ldms\n", rtt_value);
             }
-            else
-                write(1, buffer + 1, strlen(buffer) - 1);
+            else {
+                for (size_t i = 1; i < strlen(buffer); i++) {
+                    write(1, buffer + i, 1);
+                    if (buffer[i] == '\n') {
+                        i += 2;
+                    }
+                }
+            }
 
             if (buffer[0] == 'K')
             {
@@ -104,7 +110,7 @@ int main(int argc, char *argv[])
         {
             if (fgets(buffer, BUF_SIZE, stdin) != NULL)
             {
-                buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
+                buffer[strcspn(buffer, "\n")] = 0;
                 if (buffer[0] == '\\')
                 {
                     char cmd[2], extra[BUF_SIZE];
