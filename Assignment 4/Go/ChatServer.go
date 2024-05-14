@@ -28,17 +28,19 @@ func main() {
 		return
 	}
 
+	exitFlag := false
 	sigintHandler := make(chan os.Signal, 1)
 	signal.Notify(sigintHandler, syscall.SIGINT)
 	go func() {
 		<-sigintHandler
+		exitFlag = true
 		closeServer(serverListener)
 		os.Exit(0)
 	}()
 
-	for {
+	for !exitFlag {
 		conn, err := serverListener.Accept()
-		if err != nil {
+		if err != nil && !exitFlag {
 			fmt.Println("Error accepting connection:", err)
 			continue
 		}
@@ -170,7 +172,7 @@ func handleExcept(details string, conn net.Conn, nickname string) {
 	except, message := parts[0], parts[1]
 	for nick, clientConn := range clients {
 		if nick != except && conn != clientConn {
-			fmt.Fprintln(clientConn, fmt.Sprintf("Mfrom %s> %s", nickname, message))
+			fmt.Fprintln(clientConn, fmt.Sprintf("Mfrom: %s> %s", nickname, message))
 		}
 	}
 }
