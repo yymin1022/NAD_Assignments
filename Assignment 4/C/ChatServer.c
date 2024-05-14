@@ -19,6 +19,7 @@
 #define NICK_SIZE 32
 #define SERVER_PORT 14094
 
+int     check_nick_avail(char *new_nick);
 int     find_client_index(int fd);
 int     setup_server();
 char    *get_ip_port(int fd, int is_client);
@@ -159,6 +160,14 @@ void    handle_new_connection(int server_fd)
 
     client_nick[strlen(client_nick) - 1] = '\0';
 
+    if (check_nick_avail(client_nick) == 0)
+    {
+        char *message = "KNickname is already used by another user. Cannot connect\n";
+        send(client_fd, message, strlen(message), 0);
+        remove_client(client_fd);
+        return;
+    }
+
     new_client.fd = client_fd;
     strcpy(new_client.nickname, client_nick);
     clients[client_count] = new_client;
@@ -259,6 +268,16 @@ void    broadcast_message(const char *message, int sender_fd)
         if (clients[i].fd != sender_fd)
             send(clients[i].fd, send_buf, strlen(send_buf), 0);
     }
+}
+
+int check_nick_avail(char *new_nick)
+{
+    for (int i = 0; i < client_count; i++)
+    {
+        if (strcmp(clients[i].nickname, new_nick) == 0)
+            return 0;
+    }
+    return 1;
 }
 
 int find_client_index(int fd)
