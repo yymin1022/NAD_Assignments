@@ -19,11 +19,6 @@
 #define MAX_CLIENT 8
 #define NICK_SIZE 32
 
-typedef struct {
-    int         fd;
-    char        nickname[NICK_SIZE];
-} client_t;
-
 int     find_client_index(int fd);
 int     setup_server();
 char    *get_client_ip_port(int fd);
@@ -37,6 +32,11 @@ void    handle_client_message(int client_fd);
 void    remove_client(int client_fd);
 void    run_server(int server_fd);
 void    send_to_nick(const char *message, const char *target_nick, const char *from_nick);
+
+typedef struct {
+    int         fd;
+    char        nickname[NICK_SIZE];
+} client_t;
 
 int         client_count = 0;
 int         client_fd_max;
