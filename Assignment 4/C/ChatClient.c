@@ -23,13 +23,16 @@ void handle_sigint(int sig);
 void close_connection();
 void encode_command(const char *command, char *cmd, char *extra);
 
-int socket_fd;
-int PING_MODE = 0;
+int             socket_fd;
+int             PING_MODE = 0;
 struct timespec PING_START_TIME;
 
 int main(int argc, char *argv[])
 {
+    char                buffer[BUF_SIZE];
+    fd_set              read_fds;
     struct sockaddr_in  server_addr;
+    struct timespec     PING_END_TIME;
 
     if (argc < 2)
     {
@@ -53,10 +56,6 @@ int main(int argc, char *argv[])
     signal(SIGINT, handle_sigint);
 
     dprintf(socket_fd, "%s\n", client_nickname);
-
-    fd_set read_fds;
-    char buffer[BUF_SIZE];
-
     while (1)
     {
         FD_ZERO(&read_fds);
@@ -87,9 +86,8 @@ int main(int argc, char *argv[])
             if (PING_MODE)
             {
                 PING_MODE = 0;
-                struct timespec PING_END_TIME;
                 clock_gettime(CLOCK_MONOTONIC, &PING_END_TIME);
-                long rtt_value = (PING_END_TIME.tv_sec - PING_START_TIME.tv_sec) * 1000 + (PING_END_TIME.tv_nsec - PING_START_TIME.tv_nsec) / 1000000;
+                long rtt_value = ((PING_END_TIME.tv_sec - PING_START_TIME.tv_sec) * 1000 + (PING_END_TIME.tv_nsec - PING_START_TIME.tv_nsec)) / 1000;
                 printf("RTT is %ldms\n", rtt_value);
             }
             else
