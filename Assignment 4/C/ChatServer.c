@@ -5,234 +5,342 @@
  **/
 
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <time.h>
+#include <sys/select.h>
 #include <unistd.h>
 
 #define BUF_SIZE 1024
 #define SERVER_PORT 14094
+#define MAX_CLIENT 8
+#define NICK_SIZE 32
 
-char    *get_client_ip_port(int fd);
-char    *get_response(int cmd, char *data, int fd);
-char    *str_toupper(char *str);
-int     exit_error(char *err_msg);
-void    print_time();
-void    sigint_handler(int signal);
+typedef struct {
+    int fd;
+    char nickname[NICK_SIZE];
+} client_t;
 
-int     client_fd_id[1024];
-int     server_response_cnt = 0;
-int     server_socket_fd;
-time_t  server_start_time_data;
+int     find_client_index(int fd);
+int     setup_server();
+char    *trim_newline(char *str);
+void    broadcast_message(const char *message, int sender_fd);
+void    close_server(int sig);
+void    exclude_nick(const char *message, const char *exclude_nick, const char *from_nick);
+void    exit_error(char *err_msg);
+void    handle_new_connection(int server_fd);
+void    handle_client_message(int client_fd);
+void    remove_client(int client_fd);
+void    run_server(int server_fd);
+void    send_to_nick(const char *message, const char *target_nick, const char *from_nick);
 
-int     main()
+int         client_count = 0;
+int         client_fd_max;
+client_t    clients[MAX_CLIENT];
+fd_set      current_sockets;
+
+int main()
 {
-    int                 client_cnt;
-    int                 client_fd_max;
-    int                 client_id;
-    int                 server_binder;
-    int                 server_option;
-    int                 server_socket_fd_flag;
-    fd_set              client_fds;
+
+    int server_fd;
+
+    server_fd = setup_server();
+    if (server_fd < 0)
+        exit_error("Failed to initialize server");
+
+    signal(SIGINT, close_server);
+    run_server(server_fd);
+    return 0;
+}
+
+int setup_server()
+{
+    int                 server_fd;
+    int                 server_option = 1;
     struct sockaddr_in  server_addr;
-    struct tm           server_start_time;
 
-    signal(SIGINT, sigint_handler);
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1)
+    {
+        perror("Socket creation failed");
+        return -1;
+    }
 
-    server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    server_socket_fd_flag = fcntl(server_socket_fd, F_GETFL, 0);
-    fcntl(server_socket_fd, F_SETFL, server_socket_fd_flag | O_NONBLOCK);
-    server_option = 1;ㄷ
-    setsockopt(server_socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
-
-    bzero(&server_addr, sizeof(server_addr));
-    server_addr.sin_addr.s_addr = INADDR_ANY;
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &server_option, sizeof(server_option));
     server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(SERVER_PORT);
 
-    server_binder = bind(server_socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (server_binder != 0)
-        return (exit_error("Socket Binding Error"));
-    server_binder = listen(server_socket_fd, 128);
-    if (server_binder != 0)
-        return (exit_error("Socket Listening Error"));
+    if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
+        perror("Bind failed");
+        return -1;
+    }
+
+    if (listen(server_fd, MAX_CLIENT) < 0)
+    {
+        perror("Listen failed");
+        return -1;
+    }
+
+    client_fd_max = server_fd;
+    FD_ZERO(&current_sockets);
+    FD_SET(server_fd, &current_sockets);
+
     printf("Server is ready to receive on port %d\n", SERVER_PORT);
+    return server_fd;
+}
 
-    FD_ZERO(&client_fds);
-    FD_SET(server_socket_fd, &client_fds);
-    client_fd_max = server_socket_fd;
+void    run_server(int server_fd)
+{
+    fd_set  client_fds;
 
-    server_start_time_data = time(NULL);
-    gmtime_r(&server_start_time_data, &server_start_time);
-    client_cnt = 0;
-    client_id = 1;
     while (1)
     {
-        fd_set          tmp_fds;
-        time_t          cur_time_data;
-        struct tm       cur_time;
-        struct timeval  timeout_val;
-
-        tmp_fds = client_fds;
-        timeout_val.tv_sec = 0;
-        timeout_val.tv_usec = 500000;
-
-        cur_time_data = time(NULL);
-        gmtime_r(&cur_time_data, &cur_time);
-        if ((cur_time.tm_sec - server_start_time.tm_sec) % 10 == 0 && cur_time_data != server_start_time_data)
+        client_fds = current_sockets;
+        if (select(client_fd_max + 1, &client_fds, NULL, NULL, NULL) < 0)
         {
-            print_time();
-            printf("Number of clients connected = %d\n", client_cnt);
-            usleep(500000);
+            perror("Select error");
+            return;
         }
 
-        if (select(client_fd_max + 1, &tmp_fds, 0, 0, &timeout_val) < 0)
-            exit_error("Select Error");
-        for (int fd = 0; fd < client_fd_max + 1; fd++)
+        for (int i = 0; i <= client_fd_max; i++)
         {
-            if (FD_ISSET(fd, &tmp_fds))
+            if (FD_ISSET(i, &client_fds))
             {
-                if (fd == server_socket_fd)
-                {
-                    int                 client_socket_fd;
-                    socklen_t           client_len;
-                    struct sockaddr_in  client_addr;
-
-                    client_len = sizeof(client_addr);
-                    client_socket_fd = accept(server_socket_fd, (struct sockaddr *)&client_addr, &client_len);
-                    client_fd_id[client_socket_fd] = client_id;
-
-                    FD_SET(client_socket_fd, &client_fds);
-                    if (client_fd_max < client_socket_fd)
-                        client_fd_max = client_socket_fd;
-                    client_cnt++;
-                    client_id++;
-                    print_time();
-                    printf("Client %d connected. Number of clients connected = %d\n", client_fd_id[client_socket_fd], client_cnt);
-                }
+                if (i == server_fd)
+                    handle_new_connection(server_fd);
                 else
-                {
-                    char    client_req_val[BUF_SIZE];
-                    char    *server_res_val;
-                    int     client_req_cmd;
-                    ssize_t client_req_len;
-                    ssize_t server_res_len;
-
-                    client_req_len = read(fd, client_req_val, BUF_SIZE);
-                    if (client_req_len == 0)
-                    {
-                        FD_CLR(fd, &client_fds);
-                        close(fd);
-                        client_cnt--;
-                        print_time();
-                        printf("Client %d disconnected. Number of clients connected = %d\n", client_fd_id[fd], client_cnt);
-                        continue;
-                    }
-
-                    client_req_cmd = client_req_val[0] - '0';
-
-                    if(client_req_cmd > 0)
-                    {
-                        char *client_ip_port = get_client_ip_port(fd);
-                        print_time();
-                        printf("TCP Connection Request from %s\n", client_ip_port);
-                        printf("Command %d\n", client_req_cmd);
-                        free(client_ip_port);
-
-                        server_res_val = get_response(client_req_cmd, client_req_val + 1, fd);
-                        server_res_len = strlen(server_res_val);
-                        write(fd, server_res_val, server_res_len);
-                        if (server_res_val)
-                            free(server_res_val);
-
-                        server_response_cnt++;
-                    }
-                }
+                    handle_client_message(i);
             }
         }
     }
 }
 
-char    *get_response(int cmd, char *data, int fd)
+void    handle_new_connection(int server_fd)
 {
-    char        *res;
-    time_t      cur_time_data;
-    struct tm   cur_time;
 
-    switch (cmd)
-    {
-        case 1:
-            return (strdup(str_toupper(data)));
-        case 2:
-            cur_time_data = time(NULL) - server_start_time_data;
-            gmtime_r(&cur_time_data, &cur_time);
-            res = malloc(20 * sizeof(char));
-            sprintf(res, "run time = %02d:%02d:%02d", cur_time.tm_hour, cur_time.tm_min, cur_time.tm_sec);
-            return (res);
-        case 3:
-            return (get_client_ip_port(fd));
-        case 4:
-            res = malloc(20 * sizeof(char));
-            sprintf(res, "requests served = %d", server_response_cnt);
-            return (res);
-        default:
-            return ("");
-    }
-}
-
-char    *get_client_ip_port(int fd)
-{
-    char                res[30];
+    char                client_nick[BUF_SIZE];
+    char                client_welcome_msg[BUF_SIZE];
+    int                 client_nick_read;
+    int                 client_fd;
+    struct sockaddr_in  client_addr;
+    client_t            new_client;
     socklen_t           addr_size;
-    struct sockaddr_in  addr_info;
 
-    addr_size = sizeof(struct sockaddr_in);
-    getpeername(fd, (struct sockaddr *)&addr_info, &addr_size);
-    sprintf(res, "%s:%d", inet_ntoa(addr_info.sin_addr), ntohs(addr_info.sin_port));
-    return (strdup(res));
-}
+    addr_size = sizeof(client_addr);
+    client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_size);
 
-char    *str_toupper(char *str)
-{
-    size_t  i;
-
-    i = 0;
-    while(str[i])
+    if (client_fd < 0)
     {
-        if (str[i] >= 'a' && str[i] <= 'z')
-            str[i] = str[i] - 'a' + 'A';
-        i++;
+        perror("Accept failed");
+        return;
     }
-    return (str);
-}
 
-int     exit_error(char *err_msg)
-{
-    dprintf(2, "Error: %s\n", err_msg);
-    exit(-1);
-}
-
-void    print_time()
-{
-    time_t      time_data;
-    struct tm   up_time;
-
-    time_data = time(NULL);
-    localtime_r(&time_data, &up_time);
-    printf("[Time: %02d:%02d:%02d] ", up_time.tm_hour, up_time.tm_min, up_time.tm_sec);
-}
-
-void    sigint_handler(int signal)
-{
-    if (signal == SIGINT)
+    if (client_count >= MAX_CLIENT)
     {
-        close(server_socket_fd);
+        char *message = "KChatting Room is Full. Cannot connect\n";
+        send(client_fd, message, strlen(message), 0);
+        close(client_fd);
+        return;
+    }
+
+    client_nick_read = read(client_fd, client_nick, BUF_SIZE);
+    if (client_nick_read <= 0)
+    {
+        char *message = "KSocket Error\n";
+        send(client_fd, message, strlen(message), 0);
+        remove_client(client_fd);
+        return;
+    }
+
+    client_nick[strlen(client_nick) - 1] = '\0';
+
+    new_client.fd = client_fd;
+    strcpy(new_client.nickname, client_nick);
+    clients[client_count] = new_client;
+
+    FD_SET(client_fd, &current_sockets);
+    if (client_fd > client_fd_max)
+        client_fd_max = client_fd;
+
+    sprintf(client_welcome_msg, "M[Welcome %s to CAU Net-Class Chat Room at %s.]\n", client_nick, "SERVER_IP");
+    send(client_fd, client_welcome_msg, strlen(client_welcome_msg), 0);
+    sprintf(client_welcome_msg, "M[There are %d users in the room]\n", client_count);
+    send(client_fd, client_welcome_msg, strlen(client_welcome_msg), 0);
+
+    client_count++;
+    printf("%s Joined from %s. There are %d users in the room.\n", client_nick, inet_ntoa(client_addr.sin_addr), client_count);
+}
+
+void    handle_client_message(int client_fd)
+{
+    char    client_msg[BUF_SIZE];
+    char    *client_command;
+    char    *client_command_extra;
+    char    *client_command_message;
+    char    *client_command_target;
+    int     client_msg_size;
+
+    client_msg_size = read(client_fd, client_msg, BUF_SIZE);
+
+    if (client_msg_size <= 0)
+    {
+        char *message = "KSocket Error\n";
+        send(client_fd, message, strlen(message), 0);
+        remove_client(client_fd);
+        return;
+    }
+
+    client_msg[client_msg_size] = '\0';
+    trim_newline(client_msg);
+
+    client_command = strtok(client_msg, " ");
+    client_command_extra = strtok(NULL, "");
+    if (strcmp(client_command, "L") == 0)
+    {
+        for (int i = 0; i < client_count; i++)
+        {
+            char line[BUF_SIZE];
+            snprintf(line, sizeof(line), "I%s - %s\n", clients[i].nickname, "CLIENT_IP");
+            send(client_fd, line, strlen(line), 0);
+        }
+    }
+    else if (strcmp(client_command, "P") == 0)
+        send(client_fd, "P\n", 2, 0);
+    else if (strcmp(client_command, "Q") == 0)
+        remove_client(client_fd);
+    else if (strcmp(client_command, "S") == 0 && client_command_extra != NULL)
+    {
+        client_command_target = strtok(client_command_extra, " ");
+        client_command_message = strtok(NULL, "");
+
+        for (int i = 0; i < client_count; i++)
+        {
+            if (clients[i].fd == client_fd)
+            {
+                send_to_nick(client_command_message, client_command_target, clients[i].nickname);
+            }
+        }
+
+    }
+    else if (strcmp(client_command, "E") == 0 && client_command_extra != NULL)
+    {
+        client_command_target = strtok(client_command_extra, " ");
+        client_command_message = strtok(NULL, "");
+
+        for (int i = 0; i < client_count; i++)
+        {
+            if (clients[i].fd == client_fd)
+            {
+                exclude_nick(client_command_message, client_command_target, clients[i].nickname);
+            }
+        }
+
+    }
+    else
+        broadcast_message(client_msg, client_fd);
+}
+
+void    broadcast_message(const char *message, int sender_fd)
+{
+    char send_buf[BUF_SIZE];
+
+    snprintf(send_buf, sizeof(send_buf), "%s\n", message);
+    for (int i = 0; i < client_count; i++)
+    {
+        if (clients[i].fd != sender_fd)
+            send(clients[i].fd, send_buf, strlen(send_buf), 0);
+    }
+}
+
+int find_client_index(int fd)
+{
+    for (int i = 0; i < client_count; i++)
+    {
+        if (clients[i].fd == fd)
+            return i;
+    }
+    return -1;
+}
+
+void    send_to_nick(const char *message, const char *target_nick, const char *from_nick)
+{
+    char send_buf[BUF_SIZE];
+
+    for (int i = 0; i < client_count; i++)
+    {
+        if (strcmp(clients[i].nickname, target_nick) == 0)
+        {
+            snprintf(send_buf, sizeof(send_buf), "M%s> %s\n", from_nick, message);
+            send(clients[i].fd, send_buf, strlen(send_buf), 0);
+            break;
+        }
+    }
+}
+
+void    exclude_nick(const char *message, const char *exclude_nick, const char *from_nick)
+{
+    char send_buf[BUF_SIZE];
+
+    for (int i = 0; i < client_count; i++)
+    {
+        if (strcmp(clients[i].nickname, exclude_nick) != 0)
+        {
+            snprintf(send_buf, sizeof(send_buf), "M%s> %s\n", from_nick, message);
+            send(clients[i].fd, send_buf, strlen(send_buf), 0);
+        }
+    }
+}
+
+void    remove_client(int client_fd)
+{
+    char send_buf[BUF_SIZE];
+
+    for (int i = 0; i < client_count; i++)
+    {
+        if (clients[i].fd == client_fd)
+        {
+            for (int j = i; j < client_count - 1; j++)
+                clients[j] = clients[j + 1];
+            client_count--;
+
+            snprintf(send_buf, sizeof(send_buf), "M%s has left the chat.", clients[i].nickname);
+            broadcast_message(send_buf, client_fd);
+            printf("%s left the room. There are %d users in the room.\n", clients[i].nickname, client_count);
+
+            close(client_fd);
+            FD_CLR(client_fd, &current_sockets);
+            break;
+        }
+    }
+}
+
+char    *trim_newline(char *str)
+{
+    char *pos;
+    if ((pos = strchr(str, '\n')) != NULL) *pos = '\0';
+    return str;
+}
+
+void    close_server(int sig)
+{
+    if (sig == SIGINT)
+    {
         printf("\rClosing Server Program...\nBye bye~\n");
+        for (int i = 0; i < client_count; i++)
+            close(clients[i].fd);
         exit(0);
     }
+}
+
+void    exit_error(char *err_msg)
+{
+    write(2, "Error: ", 7);
+    write(2, err_msg, strlen(err_msg));
+    write(2, "\n", 1);
+    exit(1);
 }
