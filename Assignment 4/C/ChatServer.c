@@ -371,7 +371,10 @@ void    remove_client(int client_fd)
         if (clients[i].fd == client_fd)
         {
             for (int j = i; j < client_count - 1; j++)
-                clients[j] = clients[j + 1];
+            {
+                clients[j].fd = clients[j + 1].fd;
+                strcpy(clients[j].nickname, clients[j + 1].nickname);
+            }
             client_count--;
 
             close(client_fd);
