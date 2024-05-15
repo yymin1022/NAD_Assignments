@@ -5,6 +5,7 @@
  **/
 
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,7 @@
 #include <time.h>
 
 #define BUF_SIZE 1024
-#define SERVER_NAME "127.0.0.1"
+#define SERVER_NAME "localhost"
 #define SERVER_PORT 24094
 
 int exit_error(char *err_msg);
@@ -46,10 +47,24 @@ int main(int argc, char *argv[])
     if (socket_fd < 0)
         return (exit_error("Socket Error"));
 
+    struct addrinfo hints, *res;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    int status = getaddrinfo(SERVER_NAME, NULL, &hints, &res);
+    if (status != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        return exit_error("getaddrinfo Error");
+    }
+
+    struct sockaddr_in *ipv4 = (struct sockaddr_in *)res->ai_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);
-    if (inet_pton(AF_INET, SERVER_NAME, &server_addr.sin_addr) <= 0)
-        return (exit_error("inet_pton Error"));
+    server_addr.sin_addr = ipv4->sin_addr;
+
+    freeaddrinfo(res);
+
     if (connect(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
         return (exit_error("Server Connection Failed"));
 
