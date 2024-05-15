@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
                 for (size_t i = 1; i < strlen(buffer); i++) {
                     write(1, buffer + i, 1);
                     if (buffer[i] == '\n') {
-                        i += 2;
+                        i++;
                     }
                 }
             }
