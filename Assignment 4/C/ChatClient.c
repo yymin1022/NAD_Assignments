@@ -16,7 +16,7 @@
 
 #define BUF_SIZE 1024
 #define SERVER_NAME "127.0.0.1"
-#define SERVER_PORT 14094
+#define SERVER_PORT 24094
 
 int exit_error(char *err_msg);
 void handle_sigint(int sig);
