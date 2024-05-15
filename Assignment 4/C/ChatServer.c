@@ -298,9 +298,11 @@ void    handle_client_message(int client_fd)
 
 void    broadcast_message(const char *message, int sender_fd)
 {
+    char sender_nick[NICK_SIZE];
     char send_buf[BUF_SIZE];
 
-    snprintf(send_buf, sizeof(send_buf), "%s\n", message);
+    strcpy(sender_nick, clients[find_client_index(sender_fd)].nickname);
+    snprintf(send_buf, sizeof(send_buf), "M%s> %s\n", sender_nick, message + 1);
     for (int i = 0; i < client_count; i++)
     {
         if (clients[i].fd != sender_fd)
