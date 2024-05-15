@@ -17,7 +17,7 @@
 #define BUF_SIZE 1024
 #define MAX_CLIENT 8
 #define NICK_SIZE 32
-#define SERVER_PORT 14094
+#define SERVER_PORT 24094
 
 int     check_message_avail(char *message);
 int     check_nick_avail(char *new_nick);
