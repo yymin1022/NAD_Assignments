@@ -101,7 +101,7 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 	}
 	defer serverConn.Close()
 
-	partFilename := filename + fmt.Sprintf(".part%d")
+	partFilename := filename + fmt.Sprintf(".part%d", partNum)
 	serverConn.Write([]byte(fmt.Sprintf("GET:%s\n", filename)))
 
 	partFile, err := os.Create(partFilename)
