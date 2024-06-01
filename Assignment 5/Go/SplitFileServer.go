@@ -30,9 +30,9 @@ func main() {
 
 	serverPort = serverPortArgument
 	if serverPort/10000 == 4 {
-		filenameSuffix = ".part1"
+		filenameSuffix = "-part1"
 	} else {
-		filenameSuffix = ".part2"
+		filenameSuffix = "-part2"
 	}
 
 	initServer()
