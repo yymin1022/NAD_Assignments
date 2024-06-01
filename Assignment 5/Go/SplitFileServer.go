@@ -8,141 +8,141 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 )
 
-const TCP_SERVER_PORT = "24094"
-
-var serverResponseCnt int
-var serverStartTime time.Time
+var serverPort int
+var filenameSuffix string
 
 func main() {
-	serverListener := initServer()
-	if serverListener == nil {
-		printError("Failed to Init Server")
-		return
+	if len(os.Args) != 3 {
+		exitError("Usage: go run server.go <port>")
 	}
 
-	sigintHandler := make(chan os.Signal, 1)
-	signal.Notify(sigintHandler, syscall.SIGINT)
-	go func() {
-		<-sigintHandler
-		closeServer(serverListener)
-		os.Exit(0)
-	}()
+	serverPortArgument, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		exitError("Invalid Argument")
+	}
 
-	clientCnt := 0
-	clientID := 0
-	go func() {
-		for {
-			serverTimer := time.NewTimer(time.Second * 10)
-			<-serverTimer.C
-			printLog(fmt.Sprintf("Number of clients connected = %d", clientCnt))
-		}
-	}()
+	serverPort = serverPortArgument
+	if serverPort/10000 == 4 {
+		filenameSuffix = "-part1"
+	} else {
+		filenameSuffix = "-part2"
+	}
 
-	serverResponseCnt = 0
-	serverStartTime = time.Now()
+	initServer()
+}
+
+func initServer() {
+	serverListener, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	if err != nil {
+		exitError(err.Error())
+	}
+	defer serverListener.Close()
+	fmt.Println("Server listening on port", serverPort)
 
 	for {
-		serverConnection, _ := serverListener.Accept()
-		go func() {
-			clientCnt++
-			clientID++
-			curClientID := clientID
-			printLog(fmt.Sprintf("Client %d connected. Number of clients connected = %d", curClientID, clientCnt))
-			for serverConnection != nil {
-				requestAddr := serverConnection.RemoteAddr()
-				if requestAddr != nil {
-					requestBuffer := make([]byte, 1024)
-					count, _ := serverConnection.Read(requestBuffer)
-					cmd, _ := strconv.Atoi(string(requestBuffer[0]))
-
-					if count == 0 {
-						_ = serverConnection.Close()
-						break
-					}
-
-					responseData := getResponse(cmd, string(requestBuffer[1:count]), requestAddr.String())
-					if responseData == "" {
-						_ = serverConnection.Close()
-						break
-					}
-
-					printLog(fmt.Sprintf("TCP Connection Request from %s", requestAddr.String()))
-					printLog(fmt.Sprintf("Command %d", cmd))
-					_, err := serverConnection.Write([]byte(responseData))
-					if err != nil {
-						printError("Failed to Send Response")
-						continue
-					}
-					serverResponseCnt++
-				}
-			}
-			clientCnt--
-			printLog(fmt.Sprintf("Client %d disconnected. Number of clients connected = %d", curClientID, clientCnt))
-		}()
+		conn, err := serverListener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection:", err.Error())
+			continue
+		}
+		go handleConnection(conn)
 	}
 }
 
-func initServer() net.Listener {
-	serverListener, err := net.Listen("tcp4", ":"+TCP_SERVER_PORT)
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	readBuffer := make([]byte, 1024)
+	for {
+		readLength, err := conn.Read(readBuffer)
+		if err != nil && err != io.EOF {
+			fmt.Println("Error reading:", err.Error())
+			return
+		}
+		if readLength == 0 {
+			return
+		}
+
+		readData := string(readBuffer[:readLength])
+		readDataParts := strings.SplitN(readData, ":", 2)
+		if len(readDataParts) != 2 {
+			fmt.Println("Invalid message format")
+			return
+		}
+
+		cmd, filename := readDataParts[0], readDataParts[1]
+		if cmd == "PUT" {
+			saveHalfFile(conn, filename)
+		} else if cmd == "GET" {
+			sendHalfFile(conn, filename)
+		} else {
+			fmt.Println("Unknown command")
+			return
+		}
+	}
+}
+
+func saveHalfFile(conn net.Conn, filename string) {
+	partFilename := filename + filenameSuffix
+	partFile, err := os.Create(partFilename)
 	if err != nil {
-		printError(err.Error())
-		return nil
+		fmt.Println("Error creating file:", err.Error())
+		return
 	}
+	defer partFile.Close()
 
-	fmt.Printf("Server is ready to receive on port %s\n", TCP_SERVER_PORT)
-
-	return serverListener
-}
-
-func closeServer(listener net.Listener) {
-	fmt.Println("\rClosing Server Program...\nBye bye~")
-	if listener != nil {
-		_ = listener.Close()
+	partFileBuffer := make([]byte, 1024)
+	for {
+		partFileLength, err := conn.Read(partFileBuffer)
+		if err != nil && err != io.EOF {
+			fmt.Println("Error reading:", err.Error())
+			return
+		}
+		if partFileLength == 0 {
+			return
+		}
+		if _, err := partFile.Write(partFileBuffer[:partFileLength]); err != nil {
+			fmt.Println("Error writing to file:", err.Error())
+			return
+		}
 	}
 }
 
-func getResponse(cmd int, data string, addr string) string {
-	switch cmd {
-	case 1:
-		return strings.TrimSpace(strings.ToUpper(data))
-	case 2:
-		curTime := time.Now()
-		upTime := int(curTime.Sub(serverStartTime).Seconds())
-		upTimeH := upTime / 3600
-		upTime %= 3600
-		upTimeM := upTime / 60
-		upTime %= 60
-		return fmt.Sprintf("run time = %02d:%02d:%02d", upTimeH, upTimeM, upTime)
-	case 3:
-		addrInfo := strings.Split(addr, ":")
-		return fmt.Sprintf("client IP = %s, port = %s", addrInfo[0], addrInfo[1])
-	case 4:
-		return fmt.Sprintf("requests served = %d", serverResponseCnt)
+func sendHalfFile(conn net.Conn, filename string) {
+	partFilename := filename + filenameSuffix
+	partFile, err := os.Open(partFilename)
+	if err != nil {
+		fmt.Println("Error opening file:", err.Error())
+		return
 	}
-	return ""
+	defer partFile.Close()
+
+	partFileBuffer := make([]byte, 1024)
+	for {
+		partFileLength, err := partFile.Read(partFileBuffer)
+		if err != nil && err != io.EOF {
+			fmt.Println("Error reading file:", err.Error())
+			return
+		}
+		if partFileLength == 0 {
+			return
+		}
+
+		conn.Write(partFileBuffer[:partFileLength])
+	}
 }
 
-func printLog(msg string) {
-	curTime := time.Now()
-	curTimeH := curTime.Hour()
-	curTimeM := curTime.Minute()
-	curTimeS := curTime.Second()
-	fmt.Printf("[Time: %02d:%02d:%02d] %s\n", curTimeH, curTimeM, curTimeS, msg)
-}
-
-func printError(msg string) {
+func exitError(msg string) {
 	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
 	if err != nil {
 		fmt.Printf("Error: %s\n", msg)
-		return
 	}
+	os.Exit(1)
 }
