@@ -128,6 +128,15 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 		if partFileLength == 0 {
 			break
 		}
+
+		if strings.Contains(string(partFileBuffer[:partFileLength]), "EOF") {
+			eofIndex := strings.Index(string(partFileBuffer[:partFileLength]), "EOF")
+			if eofIndex > 0 {
+				partFile.Write(partFileBuffer[:eofIndex])
+			}
+			break
+		}
+
 		partFile.Write(partFileBuffer[:partFileLength])
 	}
 
