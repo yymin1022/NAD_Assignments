@@ -7,162 +7,216 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
+	"strings"
 )
 
-const SERVER_NAME = "localhost"
-const SERVER_PORT = "24094"
+const SERVER_ADDRESS_1 = "localhost:44094"
+const SERVER_ADDRESS_2 = "localhost:54094"
 
 func main() {
-	serverConnection := makeConnection()
-
-	if serverConnection == nil {
-		printError("Failed to connect server.")
+	if len(os.Args) != 3 {
+		fmt.Println("Usage: go run client.go <put|get> <filename>")
 		return
 	}
 
-	sigintHandler := make(chan os.Signal, 1)
-	signal.Notify(sigintHandler, syscall.SIGINT)
-	go func() {
-		<-sigintHandler
-		closeConnection(serverConnection)
-		os.Exit(0)
-	}()
+	cmd := os.Args[1]
+	filename := os.Args[2]
 
-	exitFlag := false
-	for !exitFlag {
-		printMenu()
-		cmd := readCommand()
+	if cmd == "put" {
+		filePart1, filePart2, err := splitFile(filename)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to split file - %s", err.Error()))
+		}
 
-		text := ""
-		if cmd == 0 {
-			continue
-		} else if cmd == 5 {
+		err = sendPart(filename, filePart1, SERVER_ADDRESS_1)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to send Part 1 - %s", err.Error()))
+		}
+
+		err = sendPart(filename, filePart2, SERVER_ADDRESS_2)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to send Part 2 - %s", err.Error()))
+		}
+
+		fmt.Println("File successfully split and sent to servers.")
+	} else if cmd == "get" {
+		filePart1, err := getPart(filename, SERVER_ADDRESS_1, 1)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to get Part 1 - %s", err.Error()))
+		}
+
+		filePart2, err := getPart(filename, SERVER_ADDRESS_2, 2)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to get Part 2 - %s", err.Error()))
+		}
+
+		outputFilename := strings.Replace(filename, ".txt", "-merged.txt", 1)
+		err = mergeFiles(filePart1, filePart2, outputFilename)
+		if err != nil {
+			exitError(fmt.Sprintf("Failed to merge files - %s", err.Error()))
+		}
+
+		fmt.Println("File successfully retrieved and merged:", outputFilename)
+	} else {
+		fmt.Println("Usage: go run SplitFileClieng.go <put|get> <filename>")
+	}
+}
+
+func sendPart(filename, partFilename, serverAddress string) error {
+	serverConn, err := net.Dial("tcp4", serverAddress)
+	if err != nil {
+		return err
+	}
+	defer serverConn.Close()
+
+	partFile, err := os.Open(partFilename)
+	if err != nil {
+		return err
+	}
+	defer partFile.Close()
+
+	serverConn.Write([]byte(fmt.Sprintf("PUT:%s\n", filename)))
+	fileBuffer := make([]byte, 1024)
+	for {
+		fileLength, err := partFile.Read(fileBuffer)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		if fileLength == 0 {
 			break
-		} else if cmd == 1 {
-			fmt.Printf("Input lowercase sentence: ")
-			var err error
-			text, err = bufio.NewReader(os.Stdin).ReadString('\n')
-
-			if err != nil {
-				printError(err.Error())
-				continue
-			}
-
-			if len(text) >= 1024 {
-				printError("Text too long.")
-				continue
-			}
 		}
-
-		timeRequest := time.Now().UnixMicro()
-
-		_, err := serverConnection.Write([]byte(fmt.Sprintf("%d%s", cmd, text)))
-		if err != nil {
-			printError(err.Error())
-			continue
-		}
-
-		responseBuffer := make([]byte, 1024)
-		serverTimer := time.NewTimer(time.Second * 5)
-		go func() {
-			<-serverTimer.C
-			exitFlag = true
-			printError("Server Timeout.")
-			closeConnection(serverConnection)
-			os.Exit(0)
-		}()
-
-		_, err = serverConnection.Read(responseBuffer)
-
-		if !exitFlag {
-			if err != nil {
-				printError(err.Error())
-				serverTimer.Stop()
-				continue
-			}
-			serverTimer.Stop()
-			timeResponse := time.Now().UnixMicro()
-
-			fmt.Printf("\nReply from server: %s\n", string(responseBuffer))
-			fmt.Printf("RTT = %.3fms\n", float64(timeResponse-timeRequest)/1000)
-		}
+		serverConn.Write(fileBuffer[:fileLength])
 	}
-
-	if !exitFlag {
-		closeConnection(serverConnection)
-	}
+	return nil
 }
 
-func makeConnection() net.Conn {
-	conn, err := net.Dial("tcp4", SERVER_NAME+":"+SERVER_PORT)
-
+func getPart(filename, serverAddress string, partNum int) (string, error) {
+	serverConn, err := net.Dial("tcp4", serverAddress)
 	if err != nil {
-		printError(err.Error())
-		return nil
+		return "", err
 	}
+	defer serverConn.Close()
 
-	localAddr := conn.LocalAddr().(*net.TCPAddr)
-	fmt.Printf("Client is running on port %d\n", localAddr.Port)
+	partFilename := filename + fmt.Sprintf(".part%d")
+	serverConn.Write([]byte(fmt.Sprintf("GET:%s\n", filename)))
 
-	return conn
-}
+	partFile, err := os.Create(partFilename)
+	if err != nil {
+		return "", err
+	}
+	defer partFile.Close()
 
-func closeConnection(conn net.Conn) {
-	fmt.Println("\rClosing Client Program...\nBye bye~")
-	if conn != nil {
-		_, err := conn.Write([]byte(string(rune(5))))
-		if err != nil {
-			printError(err.Error())
+	partFileBuffer := make([]byte, 1024)
+	for {
+		partFileLength, err := serverConn.Read(partFileBuffer)
+		if err != nil && err != io.EOF {
+			return "", err
 		}
-		_ = conn.Close()
+		if partFileLength == 0 {
+			break
+		}
+		partFile.Write(partFileBuffer[:partFileLength])
 	}
+
+	return partFilename, nil
 }
 
-func printMenu() {
-	fmt.Println()
-	fmt.Println("< Select Menu. >")
-	fmt.Println("1) Convert Text to UPPER-case Letters")
-	fmt.Println("2) Get Server Uptime")
-	fmt.Println("3) Get Client IP / Port")
-	fmt.Println("4) Get Count of Requests Server Got")
-	fmt.Println("5) Exit Client")
-}
-
-func readCommand() int {
-	var input string
-
-	fmt.Print("Input Command: ")
-	_, err := fmt.Scanln(&input)
+func splitFile(filename string) (string, string, error) {
+	file, err := os.Open(filename)
 	if err != nil {
-		printError(err.Error())
+		return "", "", err
 	}
+	defer file.Close()
 
-	cmd, err := strconv.ParseInt(input, 10, 0)
+	partFile1, err := os.Create(filename + ".part1.tmp")
 	if err != nil {
-		printError("Invalid Command.")
-		return 0
+		return "", "", err
+	}
+	defer partFile1.Close()
+
+	partFile2, err := os.Create(filename + ".part2.tmp")
+	if err != nil {
+		return "", "", err
+	}
+	defer partFile2.Close()
+
+	fileBuffer := make([]byte, 1)
+	isPart1 := true
+	for {
+		fileLength, err := file.Read(fileBuffer)
+		if err != nil && err != io.EOF {
+			return "", "", err
+		}
+		if fileLength == 0 {
+			break
+		}
+
+		if isPart1 {
+			partFile1.Write(fileBuffer[:fileLength])
+		} else {
+			partFile2.Write(fileBuffer[:fileLength])
+		}
+		isPart1 = !isPart1
 	}
 
-	if cmd < 1 || cmd > 5 {
-		printError("Invalid Command.")
-		return 0
-	}
-
-	return int(cmd)
+	return filename + ".part1.tmp", filename + ".part2.tmp", nil
 }
 
-func printError(msg string) {
+func mergeFiles(part1, part2, outputFile string) error {
+	outFile, err := os.Create(outputFile)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	partFile1, err := os.Open(part1)
+	if err != nil {
+		return err
+	}
+	defer partFile1.Close()
+
+	partFile2, err := os.Open(part2)
+	if err != nil {
+		return err
+	}
+	defer partFile2.Close()
+
+	partFile1Buffer := make([]byte, 1)
+	partFile2Buffer := make([]byte, 1)
+	for {
+		partFile1Length, err1 := partFile1.Read(partFile1Buffer)
+		partFile2Length, err2 := partFile2.Read(partFile2Buffer)
+
+		if partFile1Length == 0 && partFile2Length == 0 {
+			break
+		}
+
+		if partFile1Length > 0 {
+			outFile.Write(partFile1Buffer[:partFile1Length])
+		}
+		if partFile2Length > 0 {
+			outFile.Write(partFile2Buffer[:partFile2Length])
+		}
+
+		if err1 != nil && err1 != io.EOF {
+			return err1
+		}
+		if err2 != nil && err2 != io.EOF {
+			return err2
+		}
+	}
+
+	return nil
+}
+
+func exitError(msg string) {
 	_, err := fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
 	if err != nil {
 		fmt.Printf("Error: %s\n", msg)
-		return
 	}
+	os.Exit(1)
 }
