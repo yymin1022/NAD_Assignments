@@ -64,7 +64,7 @@ func main() {
 
 		fmt.Println("File successfully retrieved and merged:", outputFilename)
 	} else {
-		fmt.Println("Usage: go run SplitFileClieng.go <put|get> <filename>")
+		fmt.Println("Usage: go run SplitFileClient.go <put|get> <filename>")
 	}
 }
 
