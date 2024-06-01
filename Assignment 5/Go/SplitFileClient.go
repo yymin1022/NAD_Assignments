@@ -7,6 +7,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net"
@@ -79,7 +80,15 @@ func sendPart(filename, partFilename, serverAddress string) error {
 	}
 	defer partFile.Close()
 
-	serverConn.Write([]byte(fmt.Sprintf("PUT:%s\n", filename)))
+	serverConn.Write([]byte(fmt.Sprintf("PUT:%s", filename)))
+	response, err := bufio.NewReader(serverConn).ReadString('\n')
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(response) != "READY" {
+		return fmt.Errorf("server not ready for file content")
+	}
+
 	fileBuffer := make([]byte, 1024)
 	for {
 		fileLength, err := partFile.Read(fileBuffer)
@@ -102,7 +111,7 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 	defer serverConn.Close()
 
 	partFilename := filename + fmt.Sprintf("-part%d", partNum)
-	serverConn.Write([]byte(fmt.Sprintf("GET:%s\n", filename)))
+	serverConn.Write([]byte(fmt.Sprintf("GET:%s", filename)))
 
 	partFile, err := os.Create(partFilename)
 	if err != nil {
