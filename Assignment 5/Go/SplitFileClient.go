@@ -8,6 +8,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -119,7 +120,7 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 	}
 	defer partFile.Close()
 
-	partFileBuffer := make([]byte, 1024)
+	partFileBuffer := make([]byte, 1025)
 	for {
 		partFileLength, err := serverConn.Read(partFileBuffer)
 		if err != nil && err != io.EOF {
@@ -132,12 +133,14 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 		if strings.Contains(string(partFileBuffer[:partFileLength]), "EOF") {
 			eofIndex := strings.Index(string(partFileBuffer[:partFileLength]), "EOF")
 			if eofIndex > 0 {
-				partFile.Write(partFileBuffer[:eofIndex])
+				partFile.Write(partFileBuffer[1:eofIndex])
 			}
 			break
+		} else if string(partFileBuffer[:partFileLength][:6]) == "ERROR" {
+			return "", errors.New("Server Returned an Error")
+		} else {
+			partFile.Write(partFileBuffer[1:partFileLength])
 		}
-
-		partFile.Write(partFileBuffer[:partFileLength])
 	}
 
 	return partFilename, nil
