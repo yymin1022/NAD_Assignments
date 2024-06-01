@@ -19,7 +19,7 @@ var serverPort int
 var filenameSuffix string
 
 func main() {
-	if len(os.Args) != 3 {
+	if len(os.Args) != 2 {
 		exitError("Usage: go run server.go <port>")
 	}
 
