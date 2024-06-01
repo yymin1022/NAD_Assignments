@@ -133,11 +133,13 @@ func sendHalfFile(conn net.Conn, filename string) {
 			return
 		}
 		if partFileLength == 0 {
-			return
+			break
 		}
 
 		conn.Write(partFileBuffer[:partFileLength])
 	}
+
+	conn.Write([]byte("EOF"))
 }
 
 func exitError(msg string) {
