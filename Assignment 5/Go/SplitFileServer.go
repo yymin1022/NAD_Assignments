@@ -79,6 +79,7 @@ func handleConnection(conn net.Conn) {
 
 		cmd, filename := readDataParts[0], readDataParts[1]
 		if cmd == "PUT" {
+			conn.Write([]byte("READY\n"))
 			saveHalfFile(conn, filename)
 		} else if cmd == "GET" {
 			sendHalfFile(conn, filename)
