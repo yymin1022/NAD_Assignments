@@ -101,7 +101,7 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 	}
 	defer serverConn.Close()
 
-	partFilename := filename + fmt.Sprintf(".part%d", partNum)
+	partFilename := filename + fmt.Sprintf("-part%d", partNum)
 	serverConn.Write([]byte(fmt.Sprintf("GET:%s\n", filename)))
 
 	partFile, err := os.Create(partFilename)
@@ -132,13 +132,13 @@ func splitFile(filename string) (string, string, error) {
 	}
 	defer file.Close()
 
-	partFile1, err := os.Create(filename + ".part1.tmp")
+	partFile1, err := os.Create(filename + "-part1.tmp")
 	if err != nil {
 		return "", "", err
 	}
 	defer partFile1.Close()
 
-	partFile2, err := os.Create(filename + ".part2.tmp")
+	partFile2, err := os.Create(filename + "-part2.tmp")
 	if err != nil {
 		return "", "", err
 	}
@@ -163,7 +163,7 @@ func splitFile(filename string) (string, string, error) {
 		isPart1 = !isPart1
 	}
 
-	return filename + ".part1.tmp", filename + ".part2.tmp", nil
+	return filename + "-part1.tmp", filename + "-part2.tmp", nil
 }
 
 func mergeFiles(part1, part2, outputFile string) error {
