@@ -95,6 +95,7 @@ func saveHalfFile(conn net.Conn, filename string) {
 	partFile, err := os.Create(partFilename)
 	if err != nil {
 		fmt.Println("Error creating file:", err.Error())
+		conn.Write([]byte("ERROR\n"))
 		return
 	}
 	defer partFile.Close()
@@ -104,6 +105,7 @@ func saveHalfFile(conn net.Conn, filename string) {
 		partFileLength, err := conn.Read(partFileBuffer)
 		if err != nil && err != io.EOF {
 			fmt.Println("Error reading:", err.Error())
+			conn.Write([]byte("ERROR\n"))
 			return
 		}
 		if partFileLength == 0 {
@@ -111,6 +113,7 @@ func saveHalfFile(conn net.Conn, filename string) {
 		}
 		if _, err := partFile.Write(partFileBuffer[:partFileLength]); err != nil {
 			fmt.Println("Error writing to file:", err.Error())
+			conn.Write([]byte("ERROR\n"))
 			return
 		}
 	}
@@ -121,6 +124,7 @@ func sendHalfFile(conn net.Conn, filename string) {
 	partFile, err := os.Open(partFilename)
 	if err != nil {
 		fmt.Println("Error opening file:", err.Error())
+		conn.Write([]byte("ERROR\n"))
 		return
 	}
 	defer partFile.Close()
@@ -130,13 +134,14 @@ func sendHalfFile(conn net.Conn, filename string) {
 		partFileLength, err := partFile.Read(partFileBuffer)
 		if err != nil && err != io.EOF {
 			fmt.Println("Error reading file:", err.Error())
+			conn.Write([]byte("ERROR\n"))
 			return
 		}
 		if partFileLength == 0 {
 			break
 		}
 
-		conn.Write(partFileBuffer[:partFileLength])
+		conn.Write(append([]byte("N"), partFileBuffer[:partFileLength]...))
 	}
 
 	conn.Write([]byte("EOF"))
