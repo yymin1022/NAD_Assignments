@@ -39,7 +39,7 @@ func main() {
 }
 
 func initServer() {
-	serverListener, err := net.Listen("tcp", fmt.Sprintf(":%d", serverPort))
+	serverListener, err := net.Listen("tcp4", fmt.Sprintf(":%d", serverPort))
 	if err != nil {
 		exitError(err.Error())
 	}
