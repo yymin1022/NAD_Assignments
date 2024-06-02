@@ -13,6 +13,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -62,7 +63,7 @@ func main() {
 			exitError(fmt.Sprintf("Failed to get Part 2 - %s", err.Error()))
 		}
 
-		outputFilename := strings.Replace(filename, ".txt", "-merged.txt", 1)
+		outputFilename := getMergedFilename(filename)
 		err = mergeFiles(filePart1, filePart2, outputFilename)
 		os.Remove(filePart1)
 		os.Remove(filePart2)
@@ -240,6 +241,12 @@ func mergeFiles(part1, part2, outputFile string) error {
 	}
 
 	return nil
+}
+
+func getMergedFilename(filename string) string {
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	return base + "-merged" + ext
 }
 
 func exitError(msg string) {
