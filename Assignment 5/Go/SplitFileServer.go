@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -91,7 +92,7 @@ func handleConnection(conn net.Conn) {
 }
 
 func saveHalfFile(conn net.Conn, filename string) {
-	partFilename := filename + filenameSuffix
+	partFilename := getPartedFilename(filename)
 	partFile, err := os.Create(partFilename)
 	if err != nil {
 		fmt.Println("Error creating file:", err.Error())
@@ -120,7 +121,7 @@ func saveHalfFile(conn net.Conn, filename string) {
 }
 
 func sendHalfFile(conn net.Conn, filename string) {
-	partFilename := filename + filenameSuffix
+	partFilename := getPartedFilename(filename)
 	partFile, err := os.Open(partFilename)
 	if err != nil {
 		fmt.Println("Error opening file:", err.Error())
@@ -149,6 +150,12 @@ func sendHalfFile(conn net.Conn, filename string) {
 	}
 
 	conn.Write([]byte("EOF"))
+}
+
+func getPartedFilename(filename string) string {
+	ext := filepath.Ext(filename)
+	base := strings.TrimSuffix(filename, ext)
+	return base + filenameSuffix + ext
 }
 
 func exitError(msg string) {
