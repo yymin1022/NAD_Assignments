@@ -132,7 +132,11 @@ func sendHalfFile(conn net.Conn, filename string) {
 	partFileBuffer := make([]byte, 1024)
 	for {
 		partFileLength, err := partFile.Read(partFileBuffer)
-		if err != nil && err != io.EOF {
+		if err != nil {
+			if err != io.EOF {
+				break
+			}
+			
 			fmt.Println("Error reading file:", err.Error())
 			conn.Write([]byte("ERROR\n"))
 			return
