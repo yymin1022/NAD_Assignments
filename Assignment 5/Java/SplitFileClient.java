@@ -50,8 +50,7 @@ public class SplitFileClient {
                 System.out.println("Usage: java SplitFileClient <put|get> <filename>");
             }
         } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
+            exitError(e.getMessage());
         }
     }
 
@@ -67,7 +66,7 @@ public class SplitFileClient {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socketInput));
             String response = reader.readLine();
             if (!"READY".equals(response.trim())) {
-                throw new IOException("Server not ready for file content");
+                exitError("Server is not ready for File Transfer");
             }
 
             byte[] buffer = new byte[1024];
