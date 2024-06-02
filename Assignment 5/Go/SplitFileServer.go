@@ -146,7 +146,7 @@ func sendHalfFile(conn net.Conn, filename string) {
 	partFile, err := os.Open(partFilename)
 	if err != nil {
 		fmt.Println("Error opening file:", err.Error())
-		conn.Write([]byte("ERROR\n"))
+		conn.Write([]byte("NOFILE\n"))
 		return
 	}
 	defer partFile.Close()
