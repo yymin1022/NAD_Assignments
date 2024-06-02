@@ -11,9 +11,11 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 var serverPort int
@@ -36,29 +38,45 @@ func main() {
 		filenameSuffix = "-part2"
 	}
 
-	initServer()
+	serverListener := initServer()
+
+	sigintHandler := make(chan os.Signal, 1)
+	signal.Notify(sigintHandler, syscall.SIGINT)
+	go func() {
+		<-sigintHandler
+		closeServer(serverListener)
+		os.Exit(0)
+	}()
+
+	for {
+		if serverListener != nil {
+			conn, _ := serverListener.Accept()
+			go handleConnection(conn)
+		}
+	}
 }
 
-func initServer() {
+func closeServer(serverConn net.Listener) {
+	fmt.Println("\rClosing Server Program...\nBye bye~")
+	serverConn.Close()
+}
+
+func initServer() net.Listener {
 	serverListener, err := net.Listen("tcp4", fmt.Sprintf(":%d", serverPort))
 	if err != nil {
 		exitError(err.Error())
 	}
-	defer serverListener.Close()
 	fmt.Println("Server listening on port", serverPort)
 
-	for {
-		conn, err := serverListener.Accept()
-		if err != nil {
-			fmt.Println("Error accepting connection:", err.Error())
-			continue
-		}
-		go handleConnection(conn)
-	}
+	return serverListener
 }
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}()
 
 	readBuffer := make([]byte, 1024)
 	for {
