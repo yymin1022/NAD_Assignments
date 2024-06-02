@@ -87,7 +87,10 @@ public class SplitFileClient {
             int bytesRead;
             while ((bytesRead = socketInput.read(buffer)) != -1) {
                 if (new String(buffer, 0, bytesRead).contains("EOF")) {
-                    partFile.write(buffer, 1, new String(buffer, 0, bytesRead).indexOf("EOF") - 1);
+                    int eofIndex = new String(buffer, 0, bytesRead).indexOf("EOF");
+                    if (eofIndex > 1) {
+                        partFile.write(buffer, 1, eofIndex - 1);
+                    }
                     break;
                 } else {
                     partFile.write(buffer, 1, bytesRead - 1);
