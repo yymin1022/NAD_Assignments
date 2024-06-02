@@ -33,6 +33,12 @@ public class SplitFileClient {
                 String filePart1 = getPart(filename, SERVER_ADDRESS_1, SERVER_PORT_1, 1);
                 String filePart2 = getPart(filename, SERVER_ADDRESS_2, SERVER_PORT_2, 2);
 
+                if(filePart1.isEmpty() || filePart2.isEmpty()){
+                    Files.delete(Paths.get(filename + "-part1.tmp"));
+                    Files.delete(Paths.get(filename + "-part2.tmp"));
+                    exitError("Server has an error with file or returned an Error");
+                }
+
                 String outputFilename = getMergedFilename(filename);
                 mergeFiles(filePart1, filePart2, outputFilename);
 
@@ -86,8 +92,11 @@ public class SplitFileClient {
             byte[] buffer = new byte[1025];
             int bytesRead;
             while ((bytesRead = socketInput.read(buffer)) != -1) {
-                if (new String(buffer, 0, bytesRead).contains("EOF")) {
-                    int eofIndex = new String(buffer, 0, bytesRead).indexOf("EOF");
+                String data = new String(buffer, 0, bytesRead);
+                if (data.startsWith("NOFILE")) {
+                    return "";
+                } else if (data.contains("EOF")) {
+                    int eofIndex = data.indexOf("EOF");
                     if (eofIndex > 1) {
                         partFile.write(buffer, 1, eofIndex - 1);
                     }
@@ -152,5 +161,10 @@ public class SplitFileClient {
             return filename + "-merged";
         }
         return filename.substring(0, extIndex) + "-merged" + filename.substring(extIndex);
+    }
+
+    private static void exitError(String msg) {
+        System.err.println("Error: " + msg);
+        System.exit(1);
     }
 }
