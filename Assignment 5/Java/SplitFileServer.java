@@ -123,6 +123,12 @@ public class SplitFileServer {
             }
             socketOutput.write("EOF".getBytes());
         } catch (FileNotFoundException e) {
+            try {
+                OutputStream socketOutput = socket.getOutputStream();
+                socketOutput.write("NOFILE".getBytes());
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
             System.out.println("Error opening file: " + e.getMessage());
         } catch (IOException e) {
             System.out.println("Error handling file: " + e.getMessage());
