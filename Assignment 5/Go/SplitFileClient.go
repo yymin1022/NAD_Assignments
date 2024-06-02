@@ -145,6 +145,8 @@ func getPart(filename, serverAddress string, partNum int) (string, error) {
 				partFile.Write(partFileBuffer[1:eofIndex])
 			}
 			break
+		} else if string(partFileBuffer[:partFileLength][:6]) == "NOFILE" {
+			return "", errors.New("Server has an error with file")
 		} else if string(partFileBuffer[:partFileLength][:5]) == "ERROR" {
 			return "", errors.New("Server Returned an Error")
 		} else {
