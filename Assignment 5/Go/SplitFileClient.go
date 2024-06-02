@@ -31,15 +31,19 @@ func main() {
 	if cmd == "put" {
 		filePart1, filePart2, err := splitFile(filename)
 		if err != nil {
+			os.Remove(filePart1)
+			os.Remove(filePart2)
 			exitError(fmt.Sprintf("Failed to split file - %s", err.Error()))
 		}
 
 		err = sendPart(filename, filePart1, SERVER_ADDRESS_1)
+		os.Remove(filePart1)
 		if err != nil {
 			exitError(fmt.Sprintf("Failed to send Part 1 - %s", err.Error()))
 		}
 
 		err = sendPart(filename, filePart2, SERVER_ADDRESS_2)
+		os.Remove(filePart2)
 		if err != nil {
 			exitError(fmt.Sprintf("Failed to send Part 2 - %s", err.Error()))
 		}
@@ -48,16 +52,20 @@ func main() {
 	} else if cmd == "get" {
 		filePart1, err := getPart(filename, SERVER_ADDRESS_1, 1)
 		if err != nil {
+			os.Remove(filePart1)
 			exitError(fmt.Sprintf("Failed to get Part 1 - %s", err.Error()))
 		}
 
 		filePart2, err := getPart(filename, SERVER_ADDRESS_2, 2)
 		if err != nil {
+			os.Remove(filePart2)
 			exitError(fmt.Sprintf("Failed to get Part 2 - %s", err.Error()))
 		}
 
 		outputFilename := strings.Replace(filename, ".txt", "-merged.txt", 1)
 		err = mergeFiles(filePart1, filePart2, outputFilename)
+		os.Remove(filePart1)
+		os.Remove(filePart2)
 		if err != nil {
 			exitError(fmt.Sprintf("Failed to merge files - %s", err.Error()))
 		}
@@ -87,7 +95,7 @@ func sendPart(filename, partFilename, serverAddress string) error {
 		return err
 	}
 	if strings.TrimSpace(response) != "READY" {
-		return fmt.Errorf("server not ready for file content")
+		return fmt.Errorf("Server not ready for file content")
 	}
 
 	fileBuffer := make([]byte, 1024)
