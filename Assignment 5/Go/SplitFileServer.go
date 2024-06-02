@@ -80,6 +80,9 @@ func handleConnection(conn net.Conn) {
 
 	readBuffer := make([]byte, 1024)
 	for {
+		if conn == nil {
+			return
+		}
 		readLength, err := conn.Read(readBuffer)
 		if err != nil && err != io.EOF {
 			fmt.Println("Error reading:", err.Error())
