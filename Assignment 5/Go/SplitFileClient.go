@@ -32,8 +32,8 @@ func main() {
 	if cmd == "put" {
 		filePart1, filePart2, err := splitFile(filename)
 		if err != nil {
-			os.Remove(filePart1)
-			os.Remove(filePart2)
+			os.Remove(filename + "-part1.tmp")
+			os.Remove(filename + "-part2.tmp")
 			exitError(fmt.Sprintf("Failed to split file - %s", err.Error()))
 		}
 
@@ -53,13 +53,14 @@ func main() {
 	} else if cmd == "get" {
 		filePart1, err := getPart(filename, SERVER_ADDRESS_1, 1)
 		if err != nil {
-			os.Remove(filePart1)
+			os.Remove(filename + "-part1.tmp")
 			exitError(fmt.Sprintf("Failed to get Part 1 - %s", err.Error()))
 		}
 
 		filePart2, err := getPart(filename, SERVER_ADDRESS_2, 2)
 		if err != nil {
-			os.Remove(filePart2)
+			os.Remove(filename + "-part1.tmp")
+			os.Remove(filename + "-part2.tmp")
 			exitError(fmt.Sprintf("Failed to get Part 2 - %s", err.Error()))
 		}
 
